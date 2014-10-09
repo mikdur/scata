@@ -1,0 +1,280 @@
+body
+{
+	font-family: Arial, Helvetica;
+	font-size: 10px;
+	margin-top: 0px;
+}
+
+a:hover
+{
+	text-decoration: none;
+}
+
+a:visited
+{
+	color: #0000EE;
+}
+
+.secret
+{
+	visibility: hidden;
+	height: 0px;
+	width: 0px;
+}
+
+#container
+{
+	margin-left: 6px;
+	width: 794px;
+}
+
+/*** Direktiv för top-baren ***/
+#navigation
+{
+	background-image: url("./images/menu/topmenu.jpg");
+	height: 99px;
+}
+
+#nav-top-bar
+{
+	background-color: #635DBD;
+	width: 794px;
+	height: 8px;
+}
+
+#nav-logo-1
+{
+	position: relative;
+	top: 0px;
+	left: 0px;
+	width: 95px;
+	height: 76px;
+}
+
+#nav-logo-2
+{
+	position: relative;
+	top: 23px;
+	left: -98px;
+	width: 95px;
+	height: 23px;
+}
+
+#nav-scata-logo
+{
+        position: relative;
+        top: 0px;
+	left: 0px;
+        width: 0px;
+        height: 0px;
+}
+
+#nav-scata-logo1
+{
+        position: relative;
+        top: -93px;
+	left: 600px;
+        width: 93px;
+        height: 77px;
+
+}
+
+#nav-contents
+{
+	position: relative;
+	top: -79px;
+}
+
+#nav-contents-filler
+{
+	position: relative;
+	left: 95px;
+	width: 500px;
+	height: 77px;
+	padding-top: 15px;
+	padding-left: 20px;
+}
+
+#nav-contents-filler-text
+{
+	color: #949494;
+	font-size: 14px;
+}
+
+#nav-contents-filler h1
+{
+	color: #949494;
+	font-weight: normal;
+	margin: 0px;
+	padding: 0px;
+	font-size: 16px;
+}
+
+#nav-contents-links
+{
+	position: relative;
+	top: -27px;
+	left: 94px;
+	width: 692px;
+	height: 22px;
+	background-color: #B5BEC4;
+	padding-left: 8px;
+}
+
+#nav-contents-links ul
+{
+	position: relative;
+	top: -4px;
+	padding: 4px;
+	list-style: none;
+	font-size: 12px;
+	overflow: hidden;
+}
+
+#nav-contents-links ul li
+{
+	float: left;
+	margin: 0;
+	height: 23px;
+}
+
+#nav-contents-links .grey
+{
+	height: 23px;
+	float: left;
+	display: block;
+	padding-top: 4px;
+	padding-right: 7px;
+	padding-left: 7px;
+	text-align: center;
+	color: #949494;
+	text-decoration: none;
+	font-size: 13px;
+}
+
+#nav-contents-links ul li a
+{
+	height: 23px;
+	float: left;
+	display: block;
+	padding-top: 4px;
+	padding-right: 7px;
+	padding-left: 7px;
+	text-align: center;
+	color: #000;
+	text-decoration: none;
+	font-size: 13px;
+}
+
+#nav-contents-links .inactive:hover
+{
+	background-color: #A39FD9;
+}
+
+.active, .active:hover
+{
+	background-color: #635DBD;
+}
+
+#nav-bottom-bar
+{
+	position: relative;
+	top: -106px;
+	background-color: #635DBD;
+	height: 8px;
+}
+/*** Direktiv för respektive sidas container ***/
+#contents
+{
+	position: relative;
+	top: 35px;
+	left: 110px;
+	width: 550px;
+	font-size: 11px;
+}
+
+h1
+{
+	margin: 0;
+	margin-bottom: 10px;
+	padding: 0;
+	font-size: 16px;
+	font-weight: normal;
+}
+h2
+{
+	font-size: 13px;
+	margin: 0;
+	margin-left: 10px;
+	margin-bottom: 10px;
+	padding: 0;
+	font-size: 14px;
+	font-weight: normal;
+}
+
+img
+{
+	border: none;
+}
+
+table
+{
+	border-spacing: 0px;
+}
+
+tr.dark
+{
+	background-color: #A39FD9;
+}
+
+td, th
+{
+	height: 16px;
+	text-align: left;
+	vertical-align: middle;
+	padding-right: 20px;
+}
+
+th
+{
+	font-size: 12px;
+}
+
+td
+{
+	font-size: 10px;
+}
+
+span.medium
+{
+	font-size: 12px;
+	padding-bottom: 12px;
+}
+
+/*** Formulär ***/
+form#form_object ul
+{
+	list-style-type: none;
+	position: relative;
+}
+
+form#form_object li
+{
+	margin: 0;
+	padding: 0;
+	color: #000;
+}
+form#form_object label
+{
+	display: block;
+	padding: 0;
+	margin-left: 0px;
+	margin-bottom: 2px;
+	margin-top: 10px;
+	width: 500px;
+}
+
+form#form_object label.form_error
+{
+	color: #ff0000;
+}
