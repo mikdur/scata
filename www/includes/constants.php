@@ -11,11 +11,10 @@ define("SITE_URL", "http://scata.mykopat.slu.se/");
 /**
  * Sökvägar som filer ska sparas till
  */
-define("DIR_DATASET_FAS", "/mykopat/scata/datasets");
-define("DIR_DATASET_QUAL", "/mykopat/scata/datasets");
-define("DIR_REFSEQ_FAS", "/mykopat/scata/referencesets");
-define("DIR_TAGSET_TXT", "/mykopat/scata/tagsets");
-define("DIR_JOBS", "/mykopat/scata/results");
+define("DIR_DATASET", "/mykopat/scata/dev/datasets");
+define("DIR_REFSEQ_FAS", "/mykopat/scata/dev/referencesets");
+define("DIR_TAGSET_TXT", "/mykopat/scata/dev/tagsets");
+define("DIR_JOBS", "/mykopat/scata/dev/results");
 define("DIR_OTHER", "/mykopat/scata/tmp");
 define("DIR_TMP", "/mykopat/scata/tmp");
 
@@ -61,5 +60,5 @@ define("DATASET_FAILURE", 19);
 
 
 
-define("PASSWORD_SALT", "ai0sauli");
+define("PASSWORD_SALT", "asdg2231");
 ?>

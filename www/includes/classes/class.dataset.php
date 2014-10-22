@@ -21,6 +21,7 @@ class Dataset
 	private $mean_qual;
 	private $min_qual;
 	private $max_len;
+	private $file_type;
 	private $raw_filtering;
 	
 	public function __construct($id = 0)
@@ -349,6 +350,34 @@ class Dataset
 		}
 		return $this->min_qual;
 	}
+	
+	/**
+	 * Sets file type
+	 */
+	public function set_file_type($file_type)
+        {
+                $this->file_type = $file_type;
+        }
+
+	/**
+	 * Gets file type
+	 */
+        public function get_file_type()
+        {
+                if ($this->id == 0)
+                {
+                        throw new Exception("Dataset: get_file_type(): id not set");
+                }
+                if (!isset($this->file_type))
+                {
+                        $query = "SELECT file_type FROM Datasets WHERE idDatasets = {$this->id}";
+                        $this->db->query($query);
+                        $this->file_type = $this->db->fetch_data();
+                }
+                return $this->file_type;
+        }
+
+
 
 	/**
 	 * SÃ¤tt raw_filtering för dataset
@@ -449,7 +478,8 @@ class Dataset
 			max_len,
 			mean_qual,
 			min_qual,
-                        raw_filtering)
+                        raw_filtering,
+			file_type)
 		VALUES(
 			NOW(),
 			'{$this->name}',
@@ -465,7 +495,8 @@ class Dataset
 			'{$this->max_len}',
 			'{$this->mean_qual}',
 			'{$this->min_qual}',
-                        '{$this->raw_filtering}')";
+                        '{$this->raw_filtering}',
+			'{$this->file_type}')";
 		$this->db->execute($query);
 		
 		$this->id = $this->db->last_id;

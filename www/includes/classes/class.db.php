@@ -38,10 +38,10 @@ class dbObject
 	
 /* Variabler
 ***************************************************************/
-	private $host = "localhost";
-	private $database = "scata2";
-	private $username = "scata";
-	private $password = "S47a44m1n";
+	private $host = "scata.mykopat.slu.se";
+	private $database = "scata_dev";
+	private $username = "scata_dev";
+	private $password = "S4ta03v//";
 
 	private $conn;
 	private $debug;

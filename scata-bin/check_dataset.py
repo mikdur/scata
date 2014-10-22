@@ -11,7 +11,7 @@ from array import array
 sys.path.append("/mykopat/Linux-x86_64/lib/python2.5/site-packages/")
 import MySQLdb
 
-import pyroparser
+import PyroParser, FastqParser, FilterSeq
 
 from constants import *
 
@@ -46,6 +46,7 @@ def master_loop(argv, mpi_checker):
 
     owner = row["owner"]
     name = row["Name"]
+    file_type=row["file_type"]
 
     if row["ready"] == 1:
         log_entry("Dataset %d already set to ready" % (datasetid))
@@ -72,22 +73,29 @@ def master_loop(argv, mpi_checker):
     msg = ""
     errors = ""
     try:
-        # If it is an sff file, sff extract will extract the file, otherwise, it will just quit and return one
-        # HQR implies no clipping, full sequence implies clipping
-        is_fasta = subprocess.call([ base_dir + "/sff_extract",
-                          "-u" if row["raw_filtering"] else "-c",
-                          "-s", dataset_dir + "/" + sys.argv[1] + ".fasta",
-                          "-q", dataset_dir + "/" + sys.argv[1] + ".tqual",
-                          dataset_dir + "/" + sys.argv[1] + ".fas" ])
-        print is_fasta
-        if is_fasta:
-            os.rename(dataset_dir + "/" + sys.argv[1] + ".fas",
-                      dataset_dir + "/" + sys.argv[1] + ".fasta")
-	else:
-	    os.rename(dataset_dir + "/" + sys.argv[1] + ".tqual",
-                      dataset_dir + "/" + sys.argv[1] + ".qual")
-        rpyro_res = pyroparser.RawPyroRes(dataset_dir + "/" + sys.argv[1] + ".fasta",
-                                          dataset_dir + "/" + sys.argv[1] + ".qual")
+        if file_type == "fasta":
+            qual_seqs = PyroParser.RawPyroRes(dataset_dir + "/" + sys.argv[1] + ".1.dat")
+        elif file_type == "qual":
+            qual_seqs = PyroParser.RawPyroRes(dataset_dir + "/" + sys.argv[1] + ".1.dat",
+                                              dataset_dir + "/" + sys.argv[1] + ".2.dat")
+        elif file_type == "sff":
+            # HQR implies no clipping, full sequence implies clipping
+            extract_status = subprocess.call([ base_dir + "/sff_extract",
+                            "-u" if row["raw_filtering"] else "-c",
+                            "-s", dataset_dir + "/" + sys.argv[1] + ".fasta",
+                            "-q", dataset_dir + "/" + sys.argv[1] + ".qual",
+                            dataset_dir + "/" + sys.argv[1] + ".1.dat" ])
+            if extract_status:
+                raise Exception("Unable to read sff file!")
+            qual_seqs = PyroParser.RawPyroRes(dataset_dir + "/" + sys.argv[1] + ".1.fasta",
+                                              dataset_dir + "/" + sys.argv[1] + ".2.qual")
+        elif file_type == "fastq":
+            qual_seqs = FastqParser.Single(dataset_dir + "/" + sys.argv[1] + ".1.dat")
+        elif file_type == "fastq2":
+            qual_seqs = FastqParser.Pair(dataset_dir + "/" + sys.argv[1] + ".1.dat",
+                                         dataset_dir + "/" + sys.argv[1] + ".2.dat",
+                                         row["fastq_overlap"], row["fastq_overlap_sim"])
+
         seq_stats = dict( pyro_reads = 0,
                           good_reads = 0,
                           unique_reads = 0,
@@ -111,8 +119,8 @@ def master_loop(argv, mpi_checker):
         while True:
             reads = [ ]
             print "grabbing more"
-            for rpr in rpyro_res:
-                reads.append(rpr)
+            for rread in qual_seqs:
+                reads.append(rread)
                 if len(reads) >= chunk_size:
                     break
             read_job = dict( reads = reads,
@@ -188,13 +196,18 @@ def master_loop(argv, mpi_checker):
         seq_stats["min_len"] = min(lengths) if (len(lengths) > 0) else -1
         seq_stats["tagset5name"] = row["t5n"]
         seq_stats["tagset3name"] = row["t3n"]
-        if rpyro_res.check_qual:
-            if row["raw_filtering"]:
-                seq_stats["qual_type"] = "HQR"
-            else:
-                seq_stats["qual_type"] = "Full sequence"
+        if row["raw_filtering"] == 0:
+            seq_stats["qual_type"] = "Full sequence"
+            if not qual_seqs.qual_present:
+                seq_stats["qual_type"] += " no quality data provided"
+        elif row["raw_filtering"] == 1:
+            seq_stats["qual_type"] = "Full sequence - quality data ignored"
+        elif row["raw_filtering"] == 2:
+            seq_stats["qual_type"] = "HQR"
+        elif row["raw_filtering"] == 3:
+            seq_stats["qual_type"] = "Amplicon quality"
         else:
-            seq_stats["qual_type"] = "No qual file"
+            seq_stats["qual_type"] = "Unknown filtering?"
 
 
         lengths.sort()
@@ -271,9 +284,8 @@ def master_loop(argv, mpi_checker):
         db.commit()
         try:
             print "not removing files"
-            #os.remove(dataset_dir + "/" + sys.argv[1] + ".fasta")
-            #os.remove(dataset_dir + "/" + sys.argv[1] + ".qual")
-            #os.remove(dataset_dir + "/" + sys.argv[1] + ".fas")
+            #os.remove(dataset_dir + "/" + sys.argv[1] + ".dat.1")
+            #os.remove(dataset_dir + "/" + sys.argv[1] + ".dat.2")
         except:
             log_entry("Could not remove file.")
     else:
@@ -286,7 +298,8 @@ def master_loop(argv, mpi_checker):
             (msg)
         db = MySQLdb.connect( host=db_host, user=db_user, passwd=db_pass, db=db_db)
         db_c = db.cursor(MySQLdb.cursors.DictCursor)
-        db_c.execute("UPDATE Datasets SET ready=1,Description=%s WHERE idDatasets = %s", (msg,datasetid,))
+        #db_c.execute("UPDATE Datasets SET ready=1,Description=%s WHERE idDatasets = %s", (msg,datasetid,))
+        db_c.execute("UPDATE Datasets SET ready=0,locked=0,Description=%s WHERE idDatasets = %s", (msg,datasetid,))
         db.commit()
         try:
             print "removeing files"
@@ -371,8 +384,8 @@ def detag_seq(r, p5, p5s, p3, p3s, t5, t3):
 
         if len(t3):
             tag_len = t3["_____length"]
-            tag_seq = seq_str[p3_pos:(p3_pos + tag_len)]
-
+            tag_seq = seq_str[(p3_pos + len(p3)):(p3_pos + len(p3) + tag_len)]
+            tag_seq = str(Seq(tag_seq,generic_dna).reverse_complement())
             try:
                 result["tag_name"] += ("_" + t3[tag_seq])
             except KeyError:
@@ -423,18 +436,26 @@ def process_reads(read_job):
     result_list = [ ]
     for r in read_job["reads"]:
         res = dict(status = dict())
-        if r[1]:
-            if read_job["raw_filtering"]:
-                seq, status = pyroparser.filter_hqr(r[0], r[1], read_job["min_len"],
-                                                    read_job["mean_qual"],
-                                                    read_job["min_qual"])
-            else:
-                seq, status = pyroparser.filter_full(r[0], r[1], read_job["min_len"],
-                                                    read_job["mean_qual"],
-                                                    read_job["min_qual"])
-        else:
+        if read_job["raw_filtering"] == 0: # Filter full
+            if not r[1]:
+                raise Exception("Full sequence filtering requires quality data")
+            
+            seq, status = FilterSeq.filter_full(r[0], r[1], read_job["min_len"],
+                                                read_job["mean_qual"],
+                                                read_job["min_qual"])
+        elif read_job["raw_filtering"] == 1: # Full sequence, no filtering
             seq = r[0]
             status = None
+        elif read_job["raw_filtering"] == 2: # HQR
+            if not r[1]:
+                raise Exception("HQR filtering requires quality data")
+            seq, status = FilterSeq.filter_hqr(r[0], r[1], read_job["min_len"],
+                                                read_job["mean_qual"],
+                                                read_job["min_qual"])
+        elif read_job["raw_filtering"] == 3: # Primers first
+            raise Exception("Amplicon quality filtering not implemented")
+        else:
+            raise Exception("Unknown filter type")
 
         if status:
             res["status"][status] = 1
