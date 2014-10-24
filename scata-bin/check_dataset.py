@@ -94,7 +94,8 @@ def master_loop(argv, mpi_checker):
         elif file_type == "fastq2":
             qual_seqs = FastqParser.Pair(dataset_dir + "/" + sys.argv[1] + ".1.dat",
                                          dataset_dir + "/" + sys.argv[1] + ".2.dat",
-                                         row["fastq_overlap"], row["fastq_overlap_sim"])
+                                         row["overlap_kmer"], row["overlap_hsp"],
+                                         row["overlap_min"])
 
         seq_stats = dict( pyro_reads = 0,
                           good_reads = 0,
@@ -217,12 +218,13 @@ def master_loop(argv, mpi_checker):
         cPickle.dump(seq_stats,
                      open(dataset_dir + "/" + sys.argv[1] + ".stat.pick", "wct"))
 
-        to_print=[ ["pyro_reads", "Total number of pyro reads"],
+        to_print=[ ["pyro_reads", "Total number of reads"],
                    ["good_reads",  "Sequences passing QC"],
                    ["qual_type", "Quality screening method"],
                    ["rev", "Reads matching after reverse complement"],
                    ["truncated", "Number of reads truncated (limit %d)" % (row["max_len"]) ],
                    ["total_skipped", "Number of reads discarded"],
+                   ["failed_pair", "Failed overlap pairing (if applicable)"],
                    ["too_short", "Reads too short (< %d bp)" % ( row["min_len"] )],
                    ["low_mean_quality", "Reads with too low mean quality ( < %d)" % (row["mean_qual"])],
                    ["low_min_quality", "Reads containing bases with too low quality ( < %d )" % (row["min_qual"])],
@@ -238,7 +240,7 @@ def master_loop(argv, mpi_checker):
                    ["shorter_than_primer", "High quality sequence shorter than primer"] ]
 
         for tp in to_print:
-            msg += "%s:%s%8s\n" % (tp[1], (" " * (54 - len(tp[1]))), str(seq_stats[tp[0]]))
+            msg += "%s:%s%8s\n" % (tp[1], (" " * (54 - len(tp[1]))), str(seq_stats[tp[0]]) if tp[0] in seq_stats else "0")
 
     
         print msg
@@ -298,8 +300,8 @@ def master_loop(argv, mpi_checker):
             (msg)
         db = MySQLdb.connect( host=db_host, user=db_user, passwd=db_pass, db=db_db)
         db_c = db.cursor(MySQLdb.cursors.DictCursor)
-        #db_c.execute("UPDATE Datasets SET ready=1,Description=%s WHERE idDatasets = %s", (msg,datasetid,))
-        db_c.execute("UPDATE Datasets SET ready=0,locked=0,Description=%s WHERE idDatasets = %s", (msg,datasetid,))
+        db_c.execute("UPDATE Datasets SET ready=1,Description=%s WHERE idDatasets = %s", (msg,datasetid,))
+        #db_c.execute("UPDATE Datasets SET ready=0,locked=0,Description=%s WHERE idDatasets = %s", (msg,datasetid,))
         db.commit()
         try:
             print "removeing files"
@@ -434,28 +436,32 @@ def get_tagset(tagset):
 # Function to process a batch of reads
 def process_reads(read_job):
     result_list = [ ]
-    for r in read_job["reads"]:
+    for qseq in read_job["reads"]:
+        r=qseq.get()
         res = dict(status = dict())
-        if read_job["raw_filtering"] == 0: # Filter full
-            if not r[1]:
-                raise Exception("Full sequence filtering requires quality data")
-            
-            seq, status = FilterSeq.filter_full(r[0], r[1], read_job["min_len"],
-                                                read_job["mean_qual"],
-                                                read_job["min_qual"])
-        elif read_job["raw_filtering"] == 1: # Full sequence, no filtering
-            seq = r[0]
-            status = None
-        elif read_job["raw_filtering"] == 2: # HQR
-            if not r[1]:
-                raise Exception("HQR filtering requires quality data")
-            seq, status = FilterSeq.filter_hqr(r[0], r[1], read_job["min_len"],
-                                                read_job["mean_qual"],
-                                                read_job["min_qual"])
-        elif read_job["raw_filtering"] == 3: # Primers first
-            raise Exception("Amplicon quality filtering not implemented")
+        if r[0]:
+            if read_job["raw_filtering"] == 0: # Filter full
+                if not r[1]:
+                    raise Exception("Full sequence filtering requires quality data")
+                
+                seq, status = FilterSeq.filter_full(r[0], r[1], read_job["min_len"],
+                                                    read_job["mean_qual"],
+                                                    read_job["min_qual"])
+            elif read_job["raw_filtering"] == 1: # Full sequence, no filtering
+                seq = r[0]
+                status = None
+            elif read_job["raw_filtering"] == 2: # HQR
+                if not r[1]:
+                    raise Exception("HQR filtering requires quality data")
+                seq, status = FilterSeq.filter_hqr(r[0], r[1], read_job["min_len"],
+                                                    read_job["mean_qual"],
+                                                    read_job["min_qual"])
+            elif read_job["raw_filtering"] == 3: # Primers first
+                raise Exception("Amplicon quality filtering not implemented")
+            else:
+                raise Exception("Unknown filter type")
         else:
-            raise Exception("Unknown filter type")
+            status = "failed_pair"
 
         if status:
             res["status"][status] = 1

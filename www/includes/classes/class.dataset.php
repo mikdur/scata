@@ -352,6 +352,94 @@ class Dataset
 	}
 	
 	/**
+	 * Sätt overlap_ f�r dataset
+	 * @param overlap_
+	 * @return void
+	 */
+	public function set_overlap_kmer($overlap_kmer)
+	{
+		$this->overlap_kmer = $overlap_kmer;
+	}
+	
+	/**
+	 * Hämtar overlap_kmer på settet
+	 * @return string overlap_kmer
+	 */
+	public function get_overlap_kmer()
+	{
+		if ($this->id == 0)
+		{
+			throw new Exception("Dataset: get_overlap_kmer(): id not set");
+		}
+		if (!isset($this->overlap_kmer))
+		{
+			$query = "SELECT overlap_kmer FROM Datasets WHERE idDatasets = {$this->id}";
+			$this->db->query($query);
+			$this->name = $this->db->fetch_data();
+		}
+		return $this->overlap_kmer;
+	}
+
+	/**
+	 * Sätt overlap_hsp f�r dataset
+	 * @param overlap_hsp
+	 * @return void
+	 */
+	public function set_overlap_hsp($overlap_hsp)
+	{
+		$this->overlap_hsp = $overlap_hsp;
+	}
+	
+	/**
+	 * Hämtar overlap_ på settet
+	 * @return string overlap_hsp
+	 */
+	public function get_overlap_hsp()
+	{
+		if ($this->id == 0)
+		{
+			throw new Exception("Dataset: get_overlap_hsp(): id not set");
+		}
+		if (!isset($this->overlap_hsp))
+		{
+			$query = "SELECT overlap_hsp FROM Datasets WHERE idDatasets = {$this->id}";
+			$this->db->query($query);
+			$this->name = $this->db->fetch_data();
+		}
+		return $this->overlap_hsp;
+	}
+
+	/**
+	 * Sätt overlap_min f�r dataset
+	 * @param overlap_min
+	 * @return void
+	 */
+	public function set_overlap_min($overlap_min)
+	{
+		$this->overlap_min = $overlap_min;
+	}
+	
+	/**
+	 * Hämtar overlap_min på settet
+	 * @return string overlap_
+	 */
+	public function get_overlap_min()
+	{
+		if ($this->id == 0)
+		{
+			throw new Exception("Dataset: get_overlap_min(): id not set");
+		}
+		if (!isset($this->overlap_min))
+		{
+			$query = "SELECT overlap_min FROM Datasets WHERE idDatasets = {$this->id}";
+			$this->db->query($query);
+			$this->name = $this->db->fetch_data();
+		}
+		return $this->overlap_min;
+	}
+
+	
+	/**
 	 * Sets file type
 	 */
 	public function set_file_type($file_type)
@@ -478,6 +566,9 @@ class Dataset
 			max_len,
 			mean_qual,
 			min_qual,
+                        overlap_kmer,
+                        overlap_hsp,
+                        overlap_min,
                         raw_filtering,
 			file_type)
 		VALUES(
@@ -495,6 +586,9 @@ class Dataset
 			'{$this->max_len}',
 			'{$this->mean_qual}',
 			'{$this->min_qual}',
+                        '{$this->overlap_kmer}',
+                        '{$this->overlap_hsp}',
+                        '{$this->overlap_min}',
                         '{$this->raw_filtering}',
 			'{$this->file_type}')";
 		$this->db->execute($query);

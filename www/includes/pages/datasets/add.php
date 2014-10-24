@@ -91,11 +91,20 @@ if (count($errors) == 0)
 	$form->add_field("min_qual", "min_qual",
 			 "Minimum allowed base quality. (Drop any read containing any base with a quality below this threshold)",
 			 "text", "default=10;mandatory=true");
+	$form->add_field("overlap_kmer", "overlap_kmer",
+			 "Kmer size for overlap search of paired FastQ files. Leave at default if unsure",
+			 "text", "default=7;mandatory=true");
+	$form->add_field("overlap_hsp", "overlap_hsp",
+			 "Minimum number of adjacent kmers to form an HSP in overlap search. Leave at default if unsure",
+			 "text", "default=5;mandatory=true");
+	$form->add_field("overlap_min", "overlap_min",
+			 "Minium number of shared kmers to merge a read pair. Leave at defailt if unsure",
+			 "text", "default=10;mandatory=true");
 	$form->add_field("raw_filtering", "raw_filtering", "Quality filter type. Select 'full sequence' if your data are trimmed and you want to apply the quality thresholds to the complete sequences. Select 'Extract HQR' if you want SCATA to extract the longest High Quality Region from your reads. The HQR is defined as the longest part of a read that fulfills all the quality thresholds set above. Can be good for untrimmed reads from the sequencer.", "select", "mandatory=true");
 	$form->add_option("raw_filtering", "0", "Full sequences - quality screened if quality data present");
 	$form->add_option("raw_filtering", "1", "Full sequences - quality data ignored");
 	$form->add_option("raw_filtering", "2", "Extract HQR - requires quality data, done prior to primer search");
-#	$form->add_option("raw_filtering", "3", "Amplicon quality - quality screened on amplicon after primer removal");
+#	#$form->add_option("raw_filtering", "3", "Amplicon quality - quality screened on amplicon after primer removal");
 
 	$form->add_field("file_type", "file_type", "File type to be uploaded. Select type and then add File 1 and File 2 as appropriate",
 			 "select", "mandatory=true");
@@ -103,7 +112,7 @@ if (count($errors) == 0)
 	$form->add_option("file_type", "qual", "Fasta with quality. File1 = fasta file; File 2 = Fasta quality");
 	$form->add_option("file_type", "sff", "Roche/454 sff file. File1 = SFF file; File 2 = empty");
 	$form->add_option("file_type", "fastq", "Single FastQ file. File1 = FastQ file; File 2 = empty");
-	$form->add_option("file_type", "fastq2", "Paired FastQ files to be overlap merged. File1 = FastQ file; File 2 = FastQ file");
+	$form->add_option("file_type", "fastq2", "!!BETA test!! Paired FastQ files to be overlap merged. File1 = FastQ file; File 2 = FastQ file");
 
 	$form->add_field("file1", "file1",
 			 "File 1", "file", "mandatory=true");
@@ -127,6 +136,9 @@ if (count($errors) == 0)
 		$dataset->set_min_len($form->get_value('min_len'));
 		$dataset->set_mean_qual($form->get_value('mean_qual'));
 		$dataset->set_min_qual($form->get_value('min_qual'));
+		$dataset->set_overlap_kmer($form->get_value('overlap_kmer'));
+		$dataset->set_overlap_hsp($form->get_value('overlap_hsp'));
+		$dataset->set_overlap_min($form->get_value('overlap_min'));
 		$dataset->set_raw_filtering($form->get_value('raw_filtering'));
 		$dataset->set_file_type($form->get_value('file_type'));
 		$dataset->create();

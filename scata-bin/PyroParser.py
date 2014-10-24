@@ -2,6 +2,7 @@
 
 from Bio import SeqIO
 from Bio.Seq import Seq
+from FastqParser import QualSeq
 
 class Qual:
     def __init__ (self, name, qual):
@@ -75,7 +76,7 @@ class RawPyroRes:
             if len(seq_record.seq) != len(qual.quals):
                 raise Exception("Length of sequence and quality mismatch: " + seq_record.id + " " + qual.name)
             r[1] = qual
-        return r
+        return QualSeq(r)
 
 
 
