@@ -264,7 +264,6 @@ def master_loop(argv, mpi_checker):
                      datasetid,
                      repr(sys.exc_info()),
                       exception_text))
-    
         errors += "Parse error, please make sure the fasta and quality files are properly formated and in sync?\n"
         errors += "The parser reported: %s\n" % (exception_text)
         if mpi_checker:
@@ -300,8 +299,8 @@ def master_loop(argv, mpi_checker):
             (msg)
         db = MySQLdb.connect( host=db_host, user=db_user, passwd=db_pass, db=db_db)
         db_c = db.cursor(MySQLdb.cursors.DictCursor)
-        db_c.execute("UPDATE Datasets SET ready=1,Description=%s WHERE idDatasets = %s", (msg,datasetid,))
-        #db_c.execute("UPDATE Datasets SET ready=0,locked=0,Description=%s WHERE idDatasets = %s", (msg,datasetid,))
+        #db_c.execute("UPDATE Datasets SET ready=1,Description=%s WHERE idDatasets = %s", (msg,datasetid,))
+        db_c.execute("UPDATE Datasets SET ready=0,locked=0,Description=%s WHERE idDatasets = %s", (msg,datasetid,))
         db.commit()
         try:
             print "removeing files"
@@ -314,94 +313,6 @@ def master_loop(argv, mpi_checker):
 
 
 
-# Function to detag sequence and return a dict()
-# with sequence and metadata
-
-def detag_seq(r, p5, p5s, p3, p3s, t5, t3):
-    p5 = p5.upper()
-    p3 = p3.upper()
-    
-    result = dict(rev=False)
-    rev = False
-    seq = r.seq
-    seq_str = str(seq).upper()
-
-    if len(p5):
-        p5_matches = [ difflib.SequenceMatcher(None, seq_str[x:x + len(p5)],
-                                           p5).ratio() \
-                       for x in range(0, min(len(seq_str), 1500) - len(p5)) ]
-
-        if len(p5_matches) == 0:
-            result["too_short"] = True
-            return result
-    
-
-        p5_pos = p5_matches.index(max(p5_matches))
-
-        if p5_matches[p5_pos] < p5s:
-            result["rev"] = True
-            seq = seq.reverse_complement()
-            
-            seq_str = str(seq).upper()
-            p5_matches = [ difflib.SequenceMatcher(None, seq_str[x:x + len(p5)],
-                                               p5).ratio() \
-                           for x in range(0, len(seq_str) - len(p5)) ]
-
-            p5_pos = p5_matches.index(max(p5_matches))
-
-        
-        if p5_matches[p5_pos] < p5s:
-            result["no_5p"] = True
-            return result
-    else:
-        p5_pos=0
-        
-    if len(t5):
-        tag_len = t5["_____length"]
-        tag_seq = seq_str[(p5_pos - tag_len):p5_pos]
-
-        try:
-            result["tag_name"] = t5[tag_seq]
-        except KeyError:
-            result["no_such_tag5"] = True
-            return result
-    else:
-        result["tag_name"] = ""
-        
-
-    p3_pos = -1
-    p3_matches = [ ]
-
-    if len(p3):
-        p3_matches = [ difflib.SequenceMatcher(None, seq_str[x:x + len(p3)],
-                                               p3).ratio() \
-                       for x in range(0,
-                                      len(seq_str) - len(p3)) ]
-
-        p3_pos = p3_matches.index(max(p3_matches))
-
-        if p3_matches[p3_pos] < p3s:
-            result["no_3p"]=True
-            return result
-
-        if len(t3):
-            tag_len = t3["_____length"]
-            tag_seq = seq_str[(p3_pos + len(p3)):(p3_pos + len(p3) + tag_len)]
-            tag_seq = str(Seq(tag_seq,generic_dna).reverse_complement())
-            try:
-                result["tag_name"] += ("_" + t3[tag_seq])
-            except KeyError:
-                result["no_such_tag3"] = True
-                return result
-        else:
-            result["tag_name"] += ""
-
-        result["seq"] = seq_str[(p5_pos + len(p5)):p3_pos]
-    else:
-        result["seq"] = seq_str[(p5_pos + len(p5)):]
-        
-    return result
-# End detag_seq
 
 def get_tagset(tagset):
     if int(tagset) > 0:
@@ -435,7 +346,11 @@ def get_tagset(tagset):
 
 # Function to process a batch of reads
 def process_reads(read_job):
+
     result_list = [ ]
+    dtseq = FilterSeq.DeTagSeq(read_job["p5"], read_job["p5s"],
+                              read_job["p3"], read_job["p3s"],
+                              read_job["tags5"], read_job["tags3"])
     for qseq in read_job["reads"]:
         r=qseq.get()
         res = dict(status = dict())
@@ -473,9 +388,10 @@ def process_reads(read_job):
             result_list.append(res)
             continue
         
-        detagged_seq = detag_seq(seq, read_job["p5"], read_job["p5s"],
-                                 read_job["p3"], read_job["p3s"],
-                                 read_job["tags5"], read_job["tags3"])
+        detagged_seq = dtseq.detag_seq(seq)
+        #detagged_seq = FilterSeq.old_detag_seq(seq, read_job["p5"], read_job["p5s"],
+        #                      read_job["p3"], read_job["p3s"],
+        #                      read_job["tags5"], read_job["tags3"]) 
 
         if "too_short" in detagged_seq:
             res["status"]["shorter_than_primer"] = 1

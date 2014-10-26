@@ -1,5 +1,8 @@
 from Bio import SeqIO
 from Bio.Seq import Seq
+from Bio.Alphabet import generic_dna
+
+import difflib
 
 
 def filter_full(seq_record, qual, min_length, mean_min, min_qual):
@@ -82,3 +85,216 @@ def filter_hqr(seq_record, qual, min_length, mean_min, min_qual):
                     
     seq_record.seq = seq_record.seq[hqr[0]["start"]:hqr[0]["end"]]
     return [seq_record, None]
+
+A = 1
+C = 2
+G = 4
+T = 8
+trans_table = { 'A' : A,
+                     'C' : C,
+                     'G' : G,
+                     'T' : T,
+                     'R' : A | G,
+                     'Y' : C | T,
+                     'S' : G | C,
+                     'W' : A | T,
+                     'K' : G | T,
+                     'M' : A | C,
+                     'B' : C | G | T,
+                     'D' : A | G | T,
+                     'H' : A | C | T,
+                     'V' : A | C | G,
+                     'N' : A | C | T | G }
+
+
+class DeTagSeq:
+    # Translation of bases for primer identification.
+    def __init__(self, p5, p5s, p3, p3s, t5, t3):
+        self.p5s = p5s
+        self.p3s = p3s
+        self.t5 = t5
+        self.t3 = t3
+        #self.min_len = min_len
+
+        # Translate primer sequence
+        self.p5 = [trans_table[x] for x in p5.upper() if x in trans_table]
+        self.p3 = [trans_table[x] for x in p3.upper() if x in trans_table]
+        self.p5len = float(len(self.p5))
+        self.p3len = float(len(self.p3))
+
+
+    # Function to detag sequence and return a dict()
+    # with sequence and metadata
+
+    def detag_seq(self, r):
+    
+        result = dict(rev=False)
+        rev = False
+        seq = r.seq
+        seq_str = str(seq)
+        seq_list = [trans_table[x] if not x == 'N' else 0 for x in str(seq).upper() if x in trans_table]
+        p5_pos = -1
+        if len(self.p5):
+            for x in range(0, min(len(seq_str), 100 + len(self.p5) ) - len(self.p5)):
+                m = 0
+                for i in range(len(self.p5)):
+                    if seq_list[x + i] & self.p5[i]:
+                        m += 1
+                if m / self.p5len > self.p5s:
+                    p5_pos = x
+                    break
+            
+                        
+            
+
+            if p5_pos < 0:
+                result["rev"] = True
+                seq = seq.reverse_complement()
+                seq_str = str(seq)
+                seq_list = [trans_table[x] if not x == 'N' else 0 for x in str(seq).upper() if x in trans_table]
+
+                for x in range(0, min(len(seq_str), 200 + len(self.p5) ) - len(self.p5)):
+                    m = 0
+                    for i in range(len(self.p5)):
+                        if seq_list[x + i] & self.p5[i]:
+                            m += 1
+                    if m / self.p5len > self.p5s:
+                        p5_pos = x
+                        break
+            if p5_pos < 0:
+                result["no_5p"] = True
+                return result
+        else:
+            p5_pos=0
+        
+        if len(self.t5):
+            tag_len = self.t5["_____length"]
+            tag_seq = seq_str[(p5_pos - tag_len):p5_pos]
+            try:
+                result["tag_name"] = self.t5[tag_seq]
+            except KeyError:
+                result["no_such_tag5"] = True
+                return result
+        else:
+            result["tag_name"] = ""
+        
+
+        p3_pos = -1
+        p3_matches = [ ]
+
+        if len(self.p3):
+            for x in range(len(seq) - len(self.p3) - 1, p5_pos, -1):
+                m=0
+                for i in range(len(self.p3)):
+                    if seq_list[x + i] & self.p3[i]:
+                        m += 1
+                if m / self.p3len > self.p3s:
+                    p3_pos = x
+                    break
+            if p3_pos < 0:
+                result["no_3p"]=True
+                return result
+    
+            if len(self.t3):
+                tag_len = self.t3["_____length"]
+                tag_seq = seq_str[(p3_pos + len(self.p3)):(p3_pos + len(self.p3) + tag_len)]
+                tag_seq = str(Seq(tag_seq,generic_dna).reverse_complement())
+                try:
+                    result["tag_name"] += ("_" + self.t3[tag_seq])
+                except KeyError:
+                    result["no_such_tag3"] = True
+                    return result
+            else:
+                result["tag_name"] += ""
+
+            result["seq"] = seq_str[(p5_pos + len(self.p5)):p3_pos]
+        else:
+            result["seq"] = seq_str[(p5_pos + len(self.p5)):]
+        return result
+# End detag_seq
+
+def old_detag_seq(r, p5, p5s, p3, p3s, t5, t3):
+    p5 = p5.upper()
+    p3 = p3.upper()
+    
+    result = dict(rev=False)
+    rev = False
+    seq = r.seq
+    seq_str = str(seq).upper()
+
+    if len(p5):
+        p5_matches = [ difflib.SequenceMatcher(None, seq_str[x:x + len(p5)],
+                                           p5).ratio() \
+                       for x in range(0, min(len(seq_str), 1500) - len(p5)) ]
+
+        if len(p5_matches) == 0:
+            result["too_short"] = True
+            return result
+    
+
+        p5_pos = p5_matches.index(max(p5_matches))
+
+        if p5_matches[p5_pos] < p5s:
+            result["rev"] = True
+            seq = seq.reverse_complement()
+            
+            seq_str = str(seq).upper()
+            p5_matches = [ difflib.SequenceMatcher(None, seq_str[x:x + len(p5)],
+                                               p5).ratio() \
+                           for x in range(0, len(seq_str) - len(p5)) ]
+
+            p5_pos = p5_matches.index(max(p5_matches))
+
+        
+        if p5_matches[p5_pos] < p5s:
+            result["no_5p"] = True
+            return result
+    else:
+        p5_pos=0
+        
+    if len(t5):
+        tag_len = t5["_____length"]
+        tag_seq = seq_str[(p5_pos - tag_len):p5_pos]
+
+        try:
+            result["tag_name"] = t5[tag_seq]
+        except KeyError:
+            result["no_such_tag5"] = True
+            return result
+    else:
+        result["tag_name"] = ""
+        
+
+    p3_pos = -1
+    p3_matches = [ ]
+
+    if len(p3):
+        p3_matches = [ difflib.SequenceMatcher(None, seq_str[x:x + len(p3)],
+                                               p3).ratio() \
+                       for x in range(0,
+                                      len(seq_str) - len(p3)) ]
+
+        p3_pos = p3_matches.index(max(p3_matches))
+
+        if p3_matches[p3_pos] < p3s:
+            result["no_3p"]=True
+            return result
+
+        if len(t3):
+            tag_len = t3["_____length"]
+            tag_seq = seq_str[(p3_pos + len(p3)):(p3_pos + len(p3) + tag_len)]
+            tag_seq = str(Seq(tag_seq,generic_dna).reverse_complement())
+            try:
+                result["tag_name"] += ("_" + t3[tag_seq])
+            except KeyError:
+                result["no_such_tag3"] = True
+                return result
+        else:
+            result["tag_name"] += ""
+
+        result["seq"] = seq_str[(p5_pos + len(p5)):p3_pos]
+    else:
+        result["seq"] = seq_str[(p5_pos + len(p5)):]
+        
+    return result
+# End detag_seq
