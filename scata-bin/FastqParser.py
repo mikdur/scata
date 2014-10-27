@@ -2,6 +2,7 @@
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.Alphabet import generic_dna
+import gzip
 
 class QualSeq:
     def __init__(self, data):
@@ -26,7 +27,14 @@ class Qual:
 class Single:
     
     def __init__(self, fastq_file):
-        self.fastq = SeqIO.parse(fastq_file, "fastq")
+        # Try to open as gzipped file, if that fails, open as plain fasta
+        try:
+            handle = gzip.open(fastq_file, "r")
+            handle.next() # This fails if not a gzip file, goes into the exception
+            handle = gzip.open(fastq_file, "r")
+            self.fastq = SeqIO.parse(handle, "fastq")
+        except IOError:
+            self.fastq = SeqIO.parse(fastq_file, "fastq")
         self.qual_present=True
         
 
@@ -117,8 +125,15 @@ class Pair:
         self.kmer=kmer
         self.hsp = hsp
         self.min = min
-        self.fastq1 = SeqIO.parse(fastq_1, "fastq")
-        self.fastq2 = SeqIO.parse(fastq_2, "fastq")
+        try:
+            handle1 = gzip.open(fastq_1, "r")
+            handle1.next() # This fails if not a gzip file, goes into the exception
+            handle1 = gzip.open(fastq_1, "r")
+            self.fastq1 = SeqIO.parse(handle1, "fastq")
+            self.fastq2 = SeqIO.parse(gzip.open(fastq_2, "r"), "fastq")
+        except IOError:
+            self.fastq1 = SeqIO.parse(fastq_1, "fastq")
+            self.fastq2 = SeqIO.parse(fastq_2, "fastq")
         self.qual_present = True
 
 
