@@ -354,25 +354,38 @@ def process_reads(read_job):
     for qseq in read_job["reads"]:
         r=qseq.get()
         res = dict(status = dict())
-        if r[0]:
+        seq = r[0]
+        qual = r[1]
+        detagged_seq = None
+        if seq:
+            res["id"] = seq.id
             if read_job["raw_filtering"] == 0: # Filter full
-                if not r[1]:
+                if not qual:
                     raise Exception("Full sequence filtering requires quality data")
                 
-                seq, status = FilterSeq.filter_full(r[0], r[1], read_job["min_len"],
+                seq, status = FilterSeq.filter_full(seq, qual, read_job["min_len"],
                                                     read_job["mean_qual"],
                                                     read_job["min_qual"])
             elif read_job["raw_filtering"] == 1: # Full sequence, no filtering
-                seq = r[0]
                 status = None
             elif read_job["raw_filtering"] == 2: # HQR
-                if not r[1]:
+                if not qual:
                     raise Exception("HQR filtering requires quality data")
-                seq, status = FilterSeq.filter_hqr(r[0], r[1], read_job["min_len"],
+                seq, status = FilterSeq.filter_hqr(seq, qual, read_job["min_len"],
                                                     read_job["mean_qual"],
                                                     read_job["min_qual"])
             elif read_job["raw_filtering"] == 3: # Primers first
-                raise Exception("Amplicon quality filtering not implemented")
+                if not qual:
+                    raise Exception("Amplicon quality filtering requires quality data")
+                detagged_seq, qual = dtseq.detag_seq(seq,qual)
+                if "status" in detagged_seq:
+                    res["status"][detagged_seq["status"]] = 1
+                    result_list.append(res)
+                    continue
+
+                seq, status = FilterSeq.filter_full(detagged_seq["seq_record"], qual, read_job["min_len"],
+                                                    read_job["mean_qual"],
+                                                    read_job["min_qual"])
             else:
                 raise Exception("Unknown filter type")
         else:
@@ -387,33 +400,16 @@ def process_reads(read_job):
             res["status"]["too_short"] = 1
             result_list.append(res)
             continue
-        
-        detagged_seq = dtseq.detag_seq(seq)
+        if not detagged_seq:
+            detagged_seq = dtseq.detag_seq(seq)
         #detagged_seq = FilterSeq.old_detag_seq(seq, read_job["p5"], read_job["p5s"],
         #                      read_job["p3"], read_job["p3s"],
         #                      read_job["tags5"], read_job["tags3"]) 
-
-        if "too_short" in detagged_seq:
-            res["status"]["shorter_than_primer"] = 1
+        if "status" in detagged_seq:
+            res["status"][detagged_seq["status"]] = 1
             result_list.append(res)
             continue
-        if "no_5p" in detagged_seq:
-            res["status"]["no_primer5"] = 1
-            result_list.append(res)
-            continue
-        elif "no_3p" in detagged_seq:
-            res["status"]["no_primer3"] = 1
-            result_list.append(res)
-            continue
-        elif "no_such_tag5" in detagged_seq:
-            res["status"]["no_tag5"] = 1
-            result_list.append(res)
-            continue
-        elif "no_such_tag3" in detagged_seq:
-            res["status"]["no_tag3"] = 1
-            result_list.append(res)
-            continue
-
+        
         if len(detagged_seq["seq"]) < read_job["min_len"]:
             res["status"]["too_short"] = 1
             result_list.append(res)

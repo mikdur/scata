@@ -104,7 +104,7 @@ if (count($errors) == 0)
 	$form->add_option("raw_filtering", "0", "Full sequences - quality screened if quality data present");
 	$form->add_option("raw_filtering", "1", "Full sequences - quality data ignored");
 	$form->add_option("raw_filtering", "2", "Extract HQR - requires quality data, done prior to primer search");
-#	#$form->add_option("raw_filtering", "3", "Amplicon quality - quality screened on amplicon after primer removal");
+	$form->add_option("raw_filtering", "3", "!!BETA!! Amplicon quality - quality screened on amplicon after primer removal");
 
 	$form->add_field("file_type", "file_type", "File type to be uploaded. Select type and then add File 1 and File 2 as appropriate",
 			 "select", "mandatory=true");

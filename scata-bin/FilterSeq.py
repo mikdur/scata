@@ -126,11 +126,11 @@ class DeTagSeq:
     # Function to detag sequence and return a dict()
     # with sequence and metadata
 
-    def detag_seq(self, r):
+    def detag_seq(self, seq_record, q=None):
     
         result = dict(rev=False)
         rev = False
-        seq = r.seq
+        seq = seq_record.seq
         seq_str = str(seq)
         seq_list = [trans_table[x] if not x == 'N' else 0 for x in str(seq).upper() if x in trans_table]
         p5_pos = -1
@@ -162,8 +162,11 @@ class DeTagSeq:
                         p5_pos = x
                         break
             if p5_pos < 0:
-                result["no_5p"] = True
-                return result
+                result["status"] = "no_primer5"
+                if q:
+                    return (result, None)
+                else:
+                    return result
         else:
             p5_pos=0
         
@@ -173,8 +176,11 @@ class DeTagSeq:
             try:
                 result["tag_name"] = self.t5[tag_seq]
             except KeyError:
-                result["no_such_tag5"] = True
-                return result
+                result["status"] = "no_tag5"
+                if q:
+                    return (result, None)
+                else:
+                    return result
         else:
             result["tag_name"] = ""
         
@@ -192,8 +198,11 @@ class DeTagSeq:
                     p3_pos = x
                     break
             if p3_pos < 0:
-                result["no_3p"]=True
-                return result
+                result["status"] = "no_primer3"
+                if q:
+                    return (result, None)
+                else:
+                    return result
     
             if len(self.t3):
                 tag_len = self.t3["_____length"]
@@ -202,15 +211,30 @@ class DeTagSeq:
                 try:
                     result["tag_name"] += ("_" + self.t3[tag_seq])
                 except KeyError:
-                    result["no_such_tag3"] = True
-                    return result
+                    result["status"] = "no_tag3"
+                    if q:
+                        return (result, None)
+                    else:
+                        return result
             else:
                 result["tag_name"] += ""
 
             result["seq"] = seq_str[(p5_pos + len(self.p5)):p3_pos]
+            seq_record.seq = seq[(p5_pos + len(self.p5)):p3_pos]
+            result["seq_record"] = seq_record
         else:
             result["seq"] = seq_str[(p5_pos + len(self.p5)):]
-        return result
+            seq_record.seq = seq[(p5_pos + len(self.p5)):]
+            result["seq_record"] = seq_record
+
+        if not q:
+            return result
+        else:
+            if p3_pos:
+                q.quals = q.quals[(p5_pos + len(self.p5)):p3_pos]
+            else:
+                q.quals = q.quals[(p5_pos + len(self.p5)):]
+            return (result, q)
 # End detag_seq
 
 def old_detag_seq(r, p5, p5s, p3, p3s, t5, t3):
