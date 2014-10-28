@@ -16,6 +16,7 @@ $menu_pages[] = Array("Datasets", "datasets", 1);
 $menu_pages[] = Array("Reference Sequences", "refseqs", 1);
 $menu_pages[] = Array("Tag Sets", "tagsets", 1);
 $menu_pages[] = Array("Parameter Sets", "parametersets", 1);
+$menu_pages[] = Array("Files", "upload", 1);
 $menu_pages[] = Array("Login", "login", "Logout", "logout");
 $menu_pages[] = Array("Register", "register", 0);
 $menu_pages[] = Array("Help", "help", "Help", "help");
@@ -133,7 +134,7 @@ function get_page_to_show($requested_page, $menu_pages)
 	return $page;
 }
 
-$page = get_page_to_show((isset($_GET['p']) ? $_GET['p'] : ""), $menu_pages);
+$page = get_page_to_show((isset($_REQUEST['p']) ? $_REQUEST['p'] : ""), $menu_pages);
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd"> 
 <html xml:lang="sv" xmlns="http://www.w3.org/1999/xhtml"> 
@@ -143,6 +144,15 @@ $page = get_page_to_show((isset($_GET['p']) ? $_GET['p'] : ""), $menu_pages);
 	<script type="text/javascript" src="./js/jquery-1.4.2.js"></script>
 	<script type="text/javascript" src="./js/default.js"></script>
 	<script type="text/javascript" src="./js/functions.js"></script>
+<!-- production -->
+<script type="text/javascript" src="./plupload/js/plupload.full.min.js"></script>
+
+
+<!-- debug 
+<script type="text/javascript" src="./js/moxie.js"></script>
+<script type="text/javascript" src="./js/plupload.dev.js"></script>
+-->
+
 	<link rel="stylesheet" type="text/css" href="./css/style.css" />
 </head>
 <body>

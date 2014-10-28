@@ -1,24 +1,25 @@
 # File defining all system constants.
 
 
-db_host = ""
-db_user = "scata"
+db_host = "scata.mykopat.slu.se"
+db_user = "scata_dev"
 db_pass = ""
-db_db   = "scata2"
+db_db   = "scata_dev"
 
 
-base_dir = "/mykopat/scata/scata-bin"
-tagset_dir = "/mykopat/scata/tagsets"
-refset_dir = "/mykopat/scata/referencesets"
-dataset_dir = "/mykopat/scata/datasets"
-result_dir = "/mykopat/scata/results"
-run_dir = "/mykopat/scata/run"
-log_dir = "/mykopat/scata/log"
+base_dir = "/proj/mykopat-scata/dev/scata/scata-bin"
+tagset_dir = "/mykopat/scata/dev/tagsets"
+refset_dir = "/mykopat/scata/dev/referencesets"
+dataset_dir = "/mykopat/scata/dev/datasets"
+file_dir = "/mykopat/scata/dev/files"
+result_dir = "/mykopat/scata/dev/results"
+run_dir = "/mykopat/scata/dev/run"
+log_dir = "/mykopat/scata/dev/log"
 
 ref_long = 1200
 ref_max_len=2000
 
-job_script_dir = "/mykopat/scata/tmp"
+job_script_dir = "/mykopat/scata/dev/tmp"
 
 
 sge_params_backend = '-V -R y -w n -p -500 -P '
@@ -28,9 +29,6 @@ sge_params_scata = '-V -R n -w n -p -700 -q scata@* -P '
 mail_from = "SCATA <noreply@mykopat.slu.se>"
 
 import sys, time
-
-sys.path.append("/mykopat/Linux-x86_64/lib/python2.5/site-packages/")
-sys.path.append("/mykopat/Darwin-x86_64/lib/python2.5/site-packages/")
 
 def log_entry(text):
     log_file = open(log_dir + "/scata.log", "a")

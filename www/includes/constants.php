@@ -16,6 +16,7 @@ define("DIR_REFSEQ_FAS", "/mykopat/scata/dev/referencesets");
 define("DIR_TAGSET_TXT", "/mykopat/scata/dev/tagsets");
 define("DIR_JOBS", "/mykopat/scata/dev/results");
 define("DIR_OTHER", "/mykopat/scata/tmp");
+define("DIR_FILES", "/mykopat/scata/dev/files");
 define("DIR_TMP", "/mykopat/scata/tmp");
 
 /**
@@ -51,12 +52,13 @@ define("FILE_DATASET_FAS", 14);
 define("FILE_DATASET_QUAL", 15);
 define("FILE_REFSET_FAS", 16);
 define("FILE_TAGSET_TXT", 17);
+define("FILE_FILE", 18);
 
 /**
  * Värden för dataset
  */
-define("DATASET_SUCCESS", 18);
-define("DATASET_FAILURE", 19);
+define("DATASET_SUCCESS", 19);
+define("DATASET_FAILURE", 20);
 
 
 

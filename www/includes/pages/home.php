@@ -5,8 +5,8 @@ SCATA provids an analysis framework for the analysis of sequenced tagged
 amplicons, typically derived from high throughput sequencing of
 microbial communities. It is optimised for target sequences which cannot
 readily be aligned across wide phylogenies, e.g. the ITS region. For multiple alignable
-target sequences, such as 16S rRNA, we recommend the use of purposebuilt
-systems, eg. tools provided by the <a href="http://rdb.cme.msu.edu">Ribosomal Database Project</a>.
+target sequences, such as 16S rRNA, we recommend the use of pipelines
+optimised for such data.
 </p>
 
 <p>
@@ -18,6 +18,42 @@ to finish depending on other requirments of other projects for computational res
 <h2>News</h2>
 <p>
 <ul>
+  <li>
+    <b>Major update of scata capabilites!</b>
+    Today we launched a major revision of the scata system with
+    support for recent sequencing advances. This includes support for
+    reading files from both IonTorrent and MiSeq systems. More
+    specifically the following things have been added/updated:
+    <ul>
+      <li><b>New file format support</b> - Scata now supports uploading
+      of sanger fastq files, in addition to the previously supported
+	formats (fasta, fasta+qual, roche/454 sff). The fastq files
+      can be gzipped, which decreases the upload time.</li>
+      <li><b>Merging of paired MiSeq reads</b> - Scata can now merge
+      paired MiSeq reads by aligning the reads and checking for
+	overlap. </li>
+      <li><b>Amplicon quality filtering</b> - New filter, which checks
+      the quality of the amplicon once the primers have been
+      identified. Useful for sequencing methods where the quality
+      drops towards the end, and where low quality bases can occur
+	within the sequence.</li>
+      <li><b>Separate upload and dataset verification</b> - Datasets
+      should now be uploaded under the File tab, and can then be
+      checked and imported as dataset. This makes it easier to try
+      different quality check parameters without having to send the
+	whole file again.</li>
+      <li><b>Dataset check speedup</b> - Checking of datasets is now
+	5-10 times faster than before!</li>
+      <li><b>Full support for ambiguity bases in primer sequences</b>
+      - Scata now has full support for the IUPAC ambiguity codes in
+      the primer sequence. Thus, you should probably leave the primer
+      score at 0.9 or similar even in cases where there are ambiguity
+	bases in the primer sequence when importing new datasets.</li>
+      <li><b>Fixed 3´ tag support</b> - There was a bug in the 3´
+	primer matching code which is now fixed.</li>
+      </ul>
+    (2014-10-28)
+  </li>
 <li>
 <b>Wiki with documentation</b><br>
 Scata documentation is growing within the <a href="https://scata.mykopat.slu.se/trac">Scata Wiki</a>. 
@@ -25,37 +61,7 @@ Not all documentation is up to date, but we are working on it.
 If you find Scata a useful service, and use it in a way that can be useful for other people, please feel
 free to contribute your usage case to the wiki. (2011-06-20)
 </li>
-<li>
-<b>SCATA updated!</b><br/>We have updated several aspects of SCATA during the last few
-months. These changes affects several aspects of data handling under the hood
-as well as a number of things affecting you as users. Please se below for some
-details of what has changed. The old version of SCATA is no longer available (2011-03-23)
-</li>
-<li>
-<b>Improved dataset upload</b><br/>
-We have moved the quality screening and filtering of datasets to the import screen.
-This implies that you only have to wait for this process once per dataset, instead of
-every time you run the clustering. Due to this, all dataset which have previously
-been uploaded have to be uploaded again. Another new feature for the filtering
-is the ability to extract long high quality regions from the reads, instead of
-basing the filtering on the complete read. This can be good for datasets which are not trimmed
-by the Roche software. SCATA is now also able to detect primer sequences
-in either end of amplicons in order reverse complement sequences as necessary. We have 
-also added support for tags in both ends. (2011-03-23)
-</li>
-<li>
-<b>Change of homopolymer handling</b><br/>
-Scata now gives the option to collapse
-homopolymers over a given length before clustering. This only affects the sequences
-in the search and clustering process. Sequences in the report files are not 
-homopolymer collapsed and thus fully comparable to references in other databases. (2011-03-23)
-</li>
-<li>
-<b>Change of default parameters</b><br/>
-Many parameters in parameter sets have got
-new default values. Most notably, with the new homopolymer handling, we recommend the
-use of gap open and extension penalties to avoid over clustering. (2011-03-23)
-</li>
+
 </ul>
 
 </p>

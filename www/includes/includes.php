@@ -15,6 +15,7 @@ require_once("../includes/classes/class.user.php");
 require_once("../includes/classes/class.job.php");
 require_once("../includes/classes/class.refseq.php");
 require_once("../includes/classes/class.tagset.php");
+require_once("../includes/classes/class.file.php");
 require_once("../includes/classes/class.dataset.php");
 require_once("../includes/classes/class.parameterset.php");
 require_once("../includes/classes/class.parameter.php");

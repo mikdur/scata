@@ -8,7 +8,10 @@ if (isset($_GET['message']))
 }
 ?>
 
-<h1>Upload</h1>
+<h1>Files</h1>
+<p>These files have been uploaded previously and are available for
+future analysis. Plese remove files you don't need any more.</p>
+<p>Files older than 10 dayes are subject to automatic removal, should space be constrained.</p>
 <span class="medium"><a href="./?p=upload&amp;do=add">Upload files</a></span><br />
 <?php
 

@@ -23,6 +23,8 @@ class Dataset
 	private $max_len;
 	private $file_type;
 	private $raw_filtering;
+	private $file1;
+	private $file2;
 	
 	public function __construct($id = 0)
 	{
@@ -465,6 +467,74 @@ class Dataset
                 return $this->file_type;
         }
 
+	/**
+	 * Sets file1
+	 */
+	public function set_file1($file1)
+        {
+	  $file = new File($file1);
+	  if(! $file->is_owner()){
+	    throw new Exception("Dataset: Not owner to file!");
+	  }
+	  
+                $this->file1 = $file1;
+        }
+
+	/**
+	 * Gets file type
+	 */
+        public function get_file1()
+        {
+                if ($this->id == 0)
+                {
+                        throw new Exception("Dataset: get_file1(): id not set");
+                }
+                if (!isset($this->file1))
+                {
+                        $query = "SELECT file1 FROM Datasets WHERE idDatasets = {$this->id}";
+                        $this->db->query($query);
+                        $this->file1 = $this->db->fetch_data();
+                }
+                return $this->file1;
+        }
+
+	/**
+	 * Sets file2
+	 */
+	public function set_file2($file2)
+        {
+	  if ($file2 == "none"){
+	    $this->file2 = 0;
+	  }else{
+	    $file = new File($file2);
+	    if(! $file->is_owner()){
+	      throw new Exception("Dataset: Not owner to file!");
+	      
+	    }
+	  }
+	    
+	  $this->file2 = $file2;
+        }
+
+	/**
+	 * Gets file type
+	 */
+        public function get_file2()
+        {
+                if ($this->id == 0)
+                {
+                        throw new Exception("Dataset: get_file2(): id not set");
+                }
+                if (!isset($this->file2))
+                {
+                        $query = "SELECT file2 FROM Datasets WHERE idDatasets = {$this->id}";
+                        $this->db->query($query);
+                        $this->file2 = $this->db->fetch_data();
+                }
+                return $this->file2;
+        }
+
+
 
 
 	/**
@@ -570,7 +640,9 @@ class Dataset
                         overlap_hsp,
                         overlap_min,
                         raw_filtering,
-			file_type)
+			file_type,
+                        file1,
+                        file2)
 		VALUES(
 			NOW(),
 			'{$this->name}',
@@ -590,7 +662,9 @@ class Dataset
                         '{$this->overlap_hsp}',
                         '{$this->overlap_min}',
                         '{$this->raw_filtering}',
-			'{$this->file_type}')";
+			'{$this->file_type}',
+                        '{$this->file1}',
+                        '{$this->file2}')";
 		$this->db->execute($query);
 		
 		$this->id = $this->db->last_id;

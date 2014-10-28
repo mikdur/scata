@@ -1,4 +1,4 @@
-<h1>Upload dataset</h1>
+<h1>Process dataset</h1>
 
 <p>Upload sequences and quality scores for the sequences as output
 from the 454 instrument. Once the files are uploaded they will be
@@ -10,8 +10,7 @@ file and the quality score file.</p>
    screening will be disabled. </p>
 
 <p>Once the dataset is verified, you will recieve an email.</p>
-<p><b>Uploading large datasets can take several minutes
-or more. Be patient!</b></p>
+<p><b>Make sure to upload your files under the Files tab before you can process them here!</b></p>
 <p>Fields marked with * are mandatory fields.</p>
 
 <?php
@@ -27,6 +26,8 @@ $errors = Array();
 
 // Tagsets
 $tagsets = get_all_tagsets();
+$files = get_all_files();
+
 $num_tagsets_ready = 0;
 foreach($tagsets as $tagset)
 {
@@ -115,10 +116,29 @@ if (count($errors) == 0)
 	$form->add_option("file_type", "fastq2", "!!BETA test!! Paired FastQ files to be overlap merged. File1 = FastQ file; File 2 = FastQ file");
 
 	$form->add_field("file1", "file1",
-			 "File 1", "file", "mandatory=true");
+			 "File 1", "select", "mandatory=true");
+	foreach($files as $file)
+	{
+		$file = new File($file);
+		if ($file->is_owner())
+		{
+			$form->add_option("file1", $file->id, $file->get_name());		
+		}
+	}
+	$form->add_option("file2", "none", "None");
+	
 	$form->add_field("file2", "file2",
 			 "File 2", 
-			 "file", "");
+			 "select", "mandatory=true");
+	$form->add_option("file2", "none", "None");
+	foreach($files as $file)
+	{
+		$file = new File($file);
+		if ($file->is_owner())
+		{
+			$form->add_option("file2", $file->id, $file->get_name());		
+		}
+	}
 
 	// Hantera skickat formulär
 	if ($form->got_post())
@@ -141,40 +161,12 @@ if (count($errors) == 0)
 		$dataset->set_overlap_min($form->get_value('overlap_min'));
 		$dataset->set_raw_filtering($form->get_value('raw_filtering'));
 		$dataset->set_file_type($form->get_value('file_type'));
+		$dataset->set_file1($form->get_value("file1"));
+		$dataset->set_file2($form->get_value("file2"));
 		$dataset->create();
 
-		$success = true;
-		// Försöker flytta uppladdade qual-filen
-		if (!move_uploaded_file($_FILES["file1"]["tmp_name"], 
-					DIR_DATASET ."/". $dataset->id . 
-					".1.dat"))
-		  {
-		    $errors[] = "Couldn't upload fasta-file.";
-		    $success = false;
-		  }
-		// Försöker flytta uppladdade fas-filen
-		move_uploaded_file($_FILES["file2"]["tmp_name"], 
-				   DIR_DATASET ."/". $dataset->id .
-				   ".2.dat");
+		redirect("./?p=datasets&message=added&id={$dataset->id}");
 		
-		if ($success)
-		  {
-		    redirect("./?p=datasets&message=added&id={$dataset->id}");
-		  }
-		else
-		  {
-		    $dataset->delete();
-		    echo "<div>";
-		    echo "Error(s) occured:";
-		    echo "<ul>";
-		    foreach($errors as $error)
-		      {
-			echo "<li>{$error}</li>\n";
-		      }
-
-		  }
-
-
 	}
 
 	// Skriv ut formuläret

@@ -74,26 +74,26 @@ def master_loop(argv, mpi_checker):
     errors = ""
     try:
         if file_type == "fasta":
-            qual_seqs = PyroParser.RawPyroRes(dataset_dir + "/" + sys.argv[1] + ".1.dat")
+            qual_seqs = PyroParser.RawPyroRes(file_dir + "/" + str(row["file1"]) + ".dat")
         elif file_type == "qual":
-            qual_seqs = PyroParser.RawPyroRes(dataset_dir + "/" + sys.argv[1] + ".1.dat",
-                                              dataset_dir + "/" + sys.argv[1] + ".2.dat")
+            qual_seqs = PyroParser.RawPyroRes(file_dir + "/" + str(row["file1"]) + ".dat",
+                                              file_dir + "/" + str(row["file2"]) + ".dat")
         elif file_type == "sff":
             # HQR implies no clipping, full sequence implies clipping
             extract_status = subprocess.call([ base_dir + "/sff_extract",
                             "-u" if row["raw_filtering"] else "-c",
                             "-s", dataset_dir + "/" + sys.argv[1] + ".fasta",
                             "-q", dataset_dir + "/" + sys.argv[1] + ".qual",
-                            dataset_dir + "/" + sys.argv[1] + ".1.dat" ])
+                            file_dir + "/" + row["file1"] + ".dat" ])
             if extract_status:
                 raise Exception("Unable to read sff file!")
             qual_seqs = PyroParser.RawPyroRes(dataset_dir + "/" + sys.argv[1] + ".1.fasta",
                                               dataset_dir + "/" + sys.argv[1] + ".2.qual")
         elif file_type == "fastq":
-            qual_seqs = FastqParser.Single(dataset_dir + "/" + sys.argv[1] + ".1.dat")
+            qual_seqs = FastqParser.Single(file_dir + "/" + str(row["file1"]) + ".dat")
         elif file_type == "fastq2":
-            qual_seqs = FastqParser.Pair(dataset_dir + "/" + sys.argv[1] + ".1.dat",
-                                         dataset_dir + "/" + sys.argv[1] + ".2.dat",
+            qual_seqs = FastqParser.Pair(file_dir + "/" + str(row["file1"]) + ".dat",
+                                         file_dir + "/" + str(row["file2"]) + ".dat",
                                          row["overlap_kmer"], row["overlap_hsp"],
                                          row["overlap_min"])
 

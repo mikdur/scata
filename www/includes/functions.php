@@ -26,9 +26,14 @@ function move_file($name, $new_name, $type)
 			$dir = DIR_TAGSET_TXT;	
 			$extension = "txt";
 			break;
+	        case FILE_FILE :
+		        $dir = DIR_FILE;
+			$extension = "dat";
+			break;
+			  
 		default :
 			$dir = DIR_OTHER;
-			$extension = "tmp";
+			$extension = "dat";
 
 	}
 	
@@ -144,6 +149,33 @@ function get_all_tagsets()
 
 	return $tagsets;
 }
+
+/**
+ * Hämtar id för alla files
+ * Endast filer som användare kan se
+ */
+function get_all_files()
+{
+	$db = dbObject::get_instance();
+	$user = new User();
+	if ($user->is_admin())
+	{
+		$query = "SELECT idFiles FROM Files";
+	}
+	else
+	{
+		$query = "SELECT idFiles FROM Files WHERE owner = " . $user->get_id();
+	}
+	$db->query($query);
+	$files = Array();
+	while ($file = $db->fetch_row())
+	{
+		$files[] = $file[0];
+	}
+
+	return $files;
+}
+
 
 /**
  * Hämtar id för alla reference sequences

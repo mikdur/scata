@@ -25,7 +25,7 @@ a:visited
 #container
 {
 	margin-left: 6px;
-	width: 794px;
+	width: 850px;
 }
 
 /*** Direktiv för top-baren ***/
@@ -38,7 +38,7 @@ a:visited
 #nav-top-bar
 {
 	background-color: #635DBD;
-	width: 794px;
+	width: 850px;
 	height: 8px;
 }
 
@@ -115,7 +115,7 @@ a:visited
 	position: relative;
 	top: -27px;
 	left: 94px;
-	width: 692px;
+	width: 748px;
 	height: 22px;
 	background-color: #B5BEC4;
 	padding-left: 8px;

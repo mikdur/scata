@@ -19,8 +19,8 @@
 // Custom example logic
 
 var uploader = new plupload.Uploader({
-	runtimes : 'html5,flash,silverlight,html4',
-        chunk_size: '10mb',
+	runtimes : 'html5,silverlight,html4',
+        chunk_size: '1mb',
         unique_names: true,
 	browse_button : 'pickfiles', // you can pass in id...
 	container: document.getElementById('container'), // ... or DOM Element itself
