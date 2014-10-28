@@ -3,7 +3,6 @@
 import constants
 import sys, time, sge
 
-sys.path.append("/sw/lib/python2.5/site-packages/")
 import MySQLdb
 
 

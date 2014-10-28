@@ -3,7 +3,7 @@
 import sys, time, sge, os, re, traceback, random
 import scata
 
-sys.path.append("/sw/lib/python2.5/site-packages/")
+#sys.path.append("/sw/lib/python2.5/site-packages/")
 import MySQLdb
 
 from Bio import SeqIO

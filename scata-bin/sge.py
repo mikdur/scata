@@ -17,7 +17,7 @@ task_template = """#!/bin/sh
 %s
 
 . /opt/Modules/default/init/bash
-module load mpi4py
+module load mpi4py biopython
 cd /mykopat/scata/tmp
 
 
