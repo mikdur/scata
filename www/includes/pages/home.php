@@ -51,6 +51,9 @@ to finish depending on other requirments of other projects for computational res
 	bases in the primer sequence when importing new datasets.</li>
       <li><b>Fixed 3´ tag support</b> - There was a bug in the 3´
 	primer matching code which is now fixed.</li>
+      <li><b>Bug fixes</b> - There are several other minor bugfixes
+      and cleanups to the code which improves stability, speed and
+      ease of use.</li>
       </ul>
     (2014-10-28)
   </li>
