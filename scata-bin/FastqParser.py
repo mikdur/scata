@@ -106,13 +106,17 @@ class FastQPairQualSeq(QualSeq):
                 run = run[:-1]
             else:
                 break
+        if not len(run):
+            return None
         # Splice together new sequence
-        #print "".join([x[0] for x in run])
-        #print s1
-        #print s2
-        new_seq = s1[:run[-1][2]] + s2[run[-1][1][0]:]
-        quals = self.s1.letter_annotations["phred_quality"][:run[-1][2]] + \
-          s2_rec.letter_annotations["phred_quality"][run[-1][1][0]:]
+        try:
+            new_seq = s1[:run[-1][2]] + s2[run[-1][1][0]:]
+            quals = self.s1.letter_annotations["phred_quality"][:run[-1][2]] + \
+                s2_rec.letter_annotations["phred_quality"][run[-1][1][0]:]
+        except IndexError:
+            print "IndexError"
+            print run, runs
+            return None
         self.s=self.s2
         self.s.letter_annotations = dict()
         self.s.seq = Seq(new_seq, generic_dna)
