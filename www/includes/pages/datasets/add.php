@@ -125,7 +125,7 @@ if (count($errors) == 0)
 			$form->add_option("file1", $file->id, $file->get_name());		
 		}
 	}
-	$form->add_option("file2", "none", "None");
+	$form->add_option("file1", "none", "None");
 	
 	$form->add_field("file2", "file2",
 			 "File 2", 
