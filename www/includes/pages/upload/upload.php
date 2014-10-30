@@ -101,9 +101,8 @@ while ($buff = fread($in, 4096)) {
 
 // Check if file has been uploaded
 if (!$chunks || $chunk == $chunks - 1) {
-  $filename = $_FILES["file"]["name"];
   $file = new File();
-  $file -> set_name($filename);
+  $file -> set_name($fileName);
   $file -> create();
   rename("{$filePath}.part", DIR_FILES ."/". $file->id . ".dat");
       
