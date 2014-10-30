@@ -72,6 +72,48 @@ def master_loop(argv, mpi_checker):
     seqs = dict()
     msg = ""
     errors = ""
+    seq_stats = dict( pyro_reads = 0,
+                        good_reads = 0,
+                        unique_reads = 0,
+                        total_skipped = 0,
+                        too_short = 0,
+                        truncated = 0,
+                        low_mean_quality = 0,
+                        low_min_quality = 0,
+                        shorter_than_primer = 0,
+                        no_primer5 = 0,
+                        no_primer3 = 0,
+                        no_tag5 = 0,
+                        no_tag3 = 0,
+                        rev = 0)
+
+    def handle_reads(pr):
+        for r in pr:
+            seq_stats["pyro_reads"] += 1
+            for s in r["status"]:
+
+                if s in seq_stats:
+                    seq_stats[s] += 1
+                else:
+                    seq_stats[s] = 1
+            if "keep" in r:
+                seq_stats["good_reads"] += 1
+                detagged_seq = r["detagged_seq"]
+                seq_name = detagged_seq["tag_name"] + "_" + r["id"]
+                seqs[detagged_seq["seq"]] = seqs.get(detagged_seq["seq"], []) + \
+                    [[(row["Name"] + " " +  detagged_seq["tag_name"]),
+                        seq_name, detagged_seq["rev"],
+                        [row["Name"], detagged_seq["tag_name"], r["id"]]]]
+
+                if len(detagged_seq["seq"]) == 0:
+                    print detagged_seq
+
+                lengths.append(len(detagged_seq["seq"]))
+                if detagged_seq["rev"]:
+                    seq_stats["rev"] += 1
+
+
+    
     try:
         if file_type == "fasta":
             qual_seqs = PyroParser.RawPyroRes(file_dir + "/" + str(row["file1"]) + ".dat")
@@ -84,11 +126,11 @@ def master_loop(argv, mpi_checker):
                             "-u" if row["raw_filtering"] else "-c",
                             "-s", dataset_dir + "/" + sys.argv[1] + ".fasta",
                             "-q", dataset_dir + "/" + sys.argv[1] + ".qual",
-                            file_dir + "/" + row["file1"] + ".dat" ])
+                            file_dir + "/" + str(row["file1"]) + ".dat" ])
             if extract_status:
                 raise Exception("Unable to read sff file!")
-            qual_seqs = PyroParser.RawPyroRes(dataset_dir + "/" + sys.argv[1] + ".1.fasta",
-                                              dataset_dir + "/" + sys.argv[1] + ".2.qual")
+            qual_seqs = PyroParser.RawPyroRes(dataset_dir + "/" + sys.argv[1] + ".fasta",
+                                              dataset_dir + "/" + sys.argv[1] + ".qual")
         elif file_type == "fastq":
             qual_seqs = FastqParser.Single(file_dir + "/" + str(row["file1"]) + ".dat")
         elif file_type == "fastq2":
@@ -97,24 +139,9 @@ def master_loop(argv, mpi_checker):
                                          row["overlap_kmer"], row["overlap_hsp"],
                                          row["overlap_min"])
 
-        seq_stats = dict( pyro_reads = 0,
-                          good_reads = 0,
-                          unique_reads = 0,
-                          total_skipped = 0,
-                          too_short = 0,
-                          truncated = 0,
-                          low_mean_quality = 0,
-                          low_min_quality = 0,
-                          shorter_than_primer = 0,
-                          no_primer5 = 0,
-                          no_primer3 = 0,
-                          no_tag5 = 0,
-                          no_tag3 = 0,
-                          rev = 0)
 
         # Grab 100 reads at a time
-        processed_reads = [ ]
-        chunk_size = 200
+        chunk_size = 10000
         mpi_listners = []
 
         while True:
@@ -139,57 +166,22 @@ def master_loop(argv, mpi_checker):
             if mpi_checker:
                 while mpi_checker.data_available():
                     t = mpi_checker.get_data()
-                    processed_reads += t
-                    print len(processed_reads)
+                    handle_reads(t)
             if mpi_checker and mpi_checker.ready_to_send():
                 mpi_checker.send(read_job)
             else:
                 print "Processing in master"
-                processed_reads += process_reads(read_job)
-                print len(processed_reads)
+                handle_reads(process_reads(read_job))
             if len(reads) < chunk_size:
                 break
         if mpi_checker:
             while not mpi_checker.no_more():
                 while mpi_checker.data_available():
-                    processed_reads += mpi_checker.get_data()
-                    print len(processed_reads)
+                    handle_reads(mpi_checker.get_data())
                 time.sleep(1)
             mpi_checker.end_workers()
                 
-        print len(processed_reads), processed_reads[0:10]
-        for r in processed_reads:
-            seq_stats["pyro_reads"] += 1
-            for s in r["status"]:
-
-                if s in seq_stats:
-                    seq_stats[s] += 1
-                else:
-                    seq_stats[s] = 1
-            if "keep" in r:
-                seq_stats["good_reads"] += 1
-                detagged_seq = r["detagged_seq"]
-                seq_name = detagged_seq["tag_name"] + "_" + r["id"]
-
-                try:
-                    seqs[detagged_seq["seq"]].append([(row["Name"] + " " + \
-                                                   detagged_seq["tag_name"]),
-                                                   seq_name, detagged_seq["rev"],
-                        [row["Name"], detagged_seq["tag_name"], r["id"]]])
-                except KeyError:
-                    seqs[detagged_seq["seq"]] = [[(row["Name"] + " " + \
-                                               detagged_seq["tag_name"]),
-                                               seq_name,
-                                               detagged_seq["rev"],
-                        [row["Name"], detagged_seq["tag_name"], r["id"]]]]
-
-                if len(detagged_seq["seq"]) == 0:
-                    print detagged_seq
-
-                lengths.append(len(detagged_seq["seq"]))
-                if detagged_seq["rev"]:
-                    seq_stats["rev"] += 1
-
+        
         seq_stats["total_skipped"] = seq_stats["pyro_reads"] - seq_stats["good_reads"]
         seq_stats["unique_reads"] = len(seqs)
         seq_stats["mean_len"] = (sum(lengths) / seq_stats["good_reads"]) if seq_stats["good_reads"] > 0 else -1
@@ -281,7 +273,7 @@ def master_loop(argv, mpi_checker):
         # Make sure we have a recent connection to the database.
         db = MySQLdb.connect( host=db_host, user=db_user, passwd=db_pass, db=db_db)
         db_c = db.cursor(MySQLdb.cursors.DictCursor)
-        #TODO db_c.execute("DELETE FROM Datasets WHERE idDatasets = %s", (datasetid,))
+        db_c.execute("DELETE FROM Datasets WHERE idDatasets = %s", (datasetid,))
         db.commit()
         try:
             print "not removing files"
@@ -299,8 +291,8 @@ def master_loop(argv, mpi_checker):
             (msg)
         db = MySQLdb.connect( host=db_host, user=db_user, passwd=db_pass, db=db_db)
         db_c = db.cursor(MySQLdb.cursors.DictCursor)
-        #db_c.execute("UPDATE Datasets SET ready=1,Description=%s WHERE idDatasets = %s", (msg,datasetid,))
-        db_c.execute("UPDATE Datasets SET ready=0,locked=0,Description=%s WHERE idDatasets = %s", (msg,datasetid,))
+        db_c.execute("UPDATE Datasets SET ready=1,Description=%s WHERE idDatasets = %s", (msg,datasetid,))
+        #db_c.execute("UPDATE Datasets SET ready=0,locked=0,Description=%s WHERE idDatasets = %s", (msg,datasetid,))
         db.commit()
         try:
             print "removeing files"
