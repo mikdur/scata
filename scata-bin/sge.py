@@ -75,6 +75,7 @@ class SGEJob:
         self.files = []
         self.params = params
         self.array_job = True
+        self.no_array=False
         self.runtime = runtime
         self.vf = vf
 
@@ -115,11 +116,14 @@ class SGEJob:
         self.sge_job = 0
 
         # Check if there are any dependencies, otherwise make it an array job
-        for t in self.tasks:
-            if len(t["dep"]):
-                self.array_job=False
-                break
-            
+        if self.no_array:
+            self.array_job=False
+        else:
+            for t in self.tasks:
+                if len(t["dep"]):
+                    self.array_job=False
+                    break
+
         if len(self.tasks) == 1:
             self.array_job=False
         
@@ -445,6 +449,7 @@ exit((os.system(t['cmd'] + " '" + "' '".join(t["args"]) + "'") & 0xff00) >> 8)
 
     def reset_failed(self):
         self.locked = False
+        self.no_array = True
 
         increase_runtime = False
         for t in self.tasks:
