@@ -143,7 +143,7 @@ def master_loop(argv, mpi_checker):
         # Grab 100 reads at a time
         chunk_size = 10000
         mpi_listners = []
-
+        n=0
         while True:
             reads = [ ]
             print "grabbing more"
@@ -174,14 +174,24 @@ def master_loop(argv, mpi_checker):
                 handle_reads(process_reads(read_job))
             if len(reads) < chunk_size:
                 break
+            n+=chunk_size
+            db = MySQLdb.connect( host=db_host, user=db_user, passwd=db_pass, db=db_db)
+            db_c = db.cursor(MySQLdb.cursors.DictCursor)
+            db_c.execute("UPDATE Datasets SET Description=%s WHERE idDatasets = %s",
+                         ("%d reads done. %d good reads kept." % (n, seq_stats["good_reads"]) ,datasetid,))
+            db.commit()
         if mpi_checker:
             while not mpi_checker.no_more():
                 while mpi_checker.data_available():
                     handle_reads(mpi_checker.get_data())
                 time.sleep(1)
             mpi_checker.end_workers()
-                
-        
+
+        db = MySQLdb.connect( host=db_host, user=db_user, passwd=db_pass, db=db_db)
+        db_c = db.cursor(MySQLdb.cursors.DictCursor)
+        db_c.execute("UPDATE Datasets SET Description=%s WHERE idDatasets = %s",
+                        ("finalising",datasetid,))
+        db.commit()
         seq_stats["total_skipped"] = seq_stats["pyro_reads"] - seq_stats["good_reads"]
         seq_stats["unique_reads"] = len(seqs)
         seq_stats["mean_len"] = (sum(lengths) / seq_stats["good_reads"]) if seq_stats["good_reads"] > 0 else -1
