@@ -102,10 +102,10 @@ while True:
     db_c.execute("SELECT idDatasets, sgeProject  from Datasets JOIN Users on (Datasets.owner = Users.idUsers) WHERE ready=0 and locked=0")
     n = 0
     for row in db_c:
-        sge_wrapper.run("mpirun " + base_dir + "/check_dataset.py", [ str(row["idDatasets"]) ],
-                        "ScataD%d" % (row["idDatasets"]), "-R y -V -pe openmpi 10 " + sge_params_backend + str(row["sgeProject"]),
+        sge_wrapper.run(base_dir + "/check_dataset.py", [ str(row["idDatasets"]) ],
+                        "ScataD%d" % (row["idDatasets"]), "-R y -V " + sge_params_backend + str(row["sgeProject"]),
 #			 "ScataD%d" % (row["idDatasets"]), "-V " + sge_params_backend + str(row["sgeProject"]),
-                        96 * 60, "2G")
+                        96 * 60, "10G")
         n += 1
         db_c.execute("UPDATE Datasets SET locked=1 WHERE idDatasets = %s", (row["idDatasets"],))
         db.commit()
@@ -119,7 +119,7 @@ while True:
     n = 0
     for row in db_c:
         sge_wrapper.run(base_dir + "/start_scata.py", [ str(row["idJobs"])],
-                        "ScataJ%d" % (row["idJobs"]), sge_params_scata + str(row["sgeProject"]), 60 * 24 * 20, "6G")
+                        "ScataJ%d" % (row["idJobs"]), sge_params_scata + str(row["sgeProject"]), 60 * 24 * 20, "10G")
         db_c.execute("UPDATE Jobs SET locked=1 WHERE idJobs = %s", (row["idJobs"],))
         db.commit()
         n += 1
