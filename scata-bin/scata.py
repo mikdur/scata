@@ -3,7 +3,7 @@ import constants
 from uniseq import UniseqDB
 import sys, os, shutil, math
 from subprocess import call
-from pyroparser import PyroRes
+from PyroParser import PyroRes
 from sge import SGEJob as GridJob
 import cPickle
 import re, random
@@ -14,10 +14,11 @@ from Bio import SeqIO
 
 
 def reduce_homopolymer(seq, n):
-    seq = re.sub("A{%d,}" % (n), "A" * n, seq)
-    seq = re.sub("C{%d,}" % (n), "C" * n, seq)
-    seq = re.sub("T{%d,}" % (n), "T" * n, seq)
-    seq = re.sub("G{%d,}" % (n), "G" * n, seq)    
+    if n:
+        seq = re.sub("A{%d,}" % (n), "A" * n, seq)
+        seq = re.sub("C{%d,}" % (n), "C" * n, seq)
+        seq = re.sub("T{%d,}" % (n), "T" * n, seq)
+        seq = re.sub("G{%d,}" % (n), "G" * n, seq)    
     return seq
 
 def run_scata(config_file,pr=None):
