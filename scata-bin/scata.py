@@ -6,7 +6,7 @@ from subprocess import call
 from pyroparser import PyroRes
 from sge import SGEJob as GridJob
 import cPickle
-import re
+import re, random
 from Bio import SeqIO
 
 
@@ -62,15 +62,12 @@ def run_scata(config_file,pr=None):
         print "Adding ", seq_a[0]
         added_seqs = 0
         for (k, v) in t_seqs.iteritems():
-	    k = k.upper()
+            k = k.upper()
             global_seqs += len(v)
             added_seqs += len(v)
-            if k in seqs:
-                seqs[k] = seqs[k] + v
-            else:
-                seqs[k] = v
+            seqs[k] = seqs.get(k, []) + v
             for t in v:
-                used_tags[t[0]] = 1
+                used_tags[t[0]] = used_tags.get(t[0],0) + 1
         print "added %d sequences" % ( added_seqs )
         
         # Load statistics
@@ -92,10 +89,8 @@ def run_scata(config_file,pr=None):
             if len(s) >= 4:
                 if s[3][0] not in tag_mapping:
                     tag_mapping[s[3][0]] = { s[3][1] : [s[3][2]] }
-                elif s[3][1] not in tag_mapping[s[3][0]]:
-                    tag_mapping[s[3][0]][s[3][1]] = [ s[3][2] ]
                 else:
-                    tag_mapping[s[3][0]][s[3][1]] += [ s[3][2] ]
+                    tag_mapping[s[3][0]][s[3][1]] = tag_mapping[s[3][0]].get(s[3][1], []) + [ s[3][2] ]
 
     if len(tag_mapping):
         for (d, v) in tag_mapping.iteritems():
@@ -105,8 +100,36 @@ def run_scata(config_file,pr=None):
                 for s_id in s:
                     f.write(s_id + "\n")
                 f.close()
+
+    # Downsample tags to given size
+    if len(tag_mapping) and settings.get("downsample_size", 0):
+        print "Downsampling tags to at most %s reads" % settings["downsample_size"]
+
+        # Generate subsets
+        for d, v in tag_mapping.iteritems():
+            for tag in v.keys():
+                if len(v[tag]) > int(settings["downsample_size"]):
+                    v[tag] = set(random.sample(v[tag], int(settings["downsample_size"])))
     
+
+        # Filter seqs to only contain the subsample
+        keys_to_delete = [ ]
+        for k in seqs.keys():
+            new_entry = []
+            for s in seqs[k]:
+                if s[3][0] in tag_mapping \
+                  and s[3][1] in tag_mapping[s[3][0]] \
+                  and s[3][2] in tag_mapping[s[3][0]][s[3][1]]:
+                  new_entry.append(s)
+            seqs[k] = new_entry
+            if not len(seqs[k]):
+                keys_to_delete.append(k)
+        for k in keys_to_delete:
+            del seqs[k]
+        print "Number of unique genotypes after downsampling: %d" % len(seqs)
         
+        
+    
     # Read reference sequences if given in config.
     if settings["reference_seqs"] != "none":
         print "Adding reference sequences to database..."
@@ -118,10 +141,8 @@ def run_scata(config_file,pr=None):
                 if len(seq_record.seq) == 0:
                     continue
                 ref_cnt += 1
-                if str(seq_record.seq).upper() in seqs:
-                    seqs[str(seq_record.seq).upper()].append(["_____ref", seq_record.id, False])
-                else:
-                    seqs[str(seq_record.seq).upper()] = [["_____ref", seq_record.id, False]]
+                seqs[str(seq_record.seq).upper()] = \
+                  seqs.get(str(seq_record.seq).upper(), [] ) + [["_____ref", seq_record.id, False]]
 
         print "Number of reference sequences: ", ref_cnt
 
@@ -215,7 +236,7 @@ def run_scata(config_file,pr=None):
         if settings["cluster_engine"] == "usearch":
             cluster_program = "cluster_usearch.py"
             step = 10000
-	    mem_need="750M"
+	   
     
 
     
@@ -227,9 +248,10 @@ def run_scata(config_file,pr=None):
 
 
     print "Preparing Grid job"
+    xgj_mem=1
     xgj = GridJob("ScataC" + config_file,
                   settings["work_dir"], settings["sge_params"],
-                  59, mem_need, pr )
+                  59, str(xgj_mem) + "G", pr )
 
 
     for i in range(0,num_jobs):
@@ -249,6 +271,9 @@ def run_scata(config_file,pr=None):
     while xgj.get_num_failed() > 0:
         print "Some jobs failed, retrying"
         xgj.reset_failed()
+        xgj_mem = xgj_mem * 2
+        xgj.vf=str(xgj_mem) + "G"
+
         if pr:
             pr.set_msg("(1/3) Clustering (retry): ")
             pr.reset()
@@ -268,6 +293,7 @@ def run_scata(config_file,pr=None):
 
 
     # This is done by hierarchical joining
+    xgj2_mem=4
     retries = 0
     while True:
         retries += 1
@@ -276,7 +302,7 @@ def run_scata(config_file,pr=None):
             pick_files = map(lambda x: [settings["work_dir"] + "/" + x + ".pick", []], files)
             #print pick_files
             xgj2 = GridJob("ScataM" + config_file,
-                           settings["work_dir"], settings["sge_params"], 90, "4G", pr)
+                           settings["work_dir"], settings["sge_params"], 90, str(xgj2_mem) + "G", pr)
 
             outnum = 1
             while True:
@@ -307,6 +333,9 @@ def run_scata(config_file,pr=None):
             while xgj2.get_num_failed() > 0:
                 print "Some jobs failed, retrying"
                 xgj2.reset_failed()
+                xgj2_mem = xgj2_mem * 2
+                xgj2.vf=str(xgj2_mem) + "G"
+
                 if pr:
                     pr.set_msg("(2/3) Retry merging: ")
                     pr.reset()
@@ -380,10 +409,10 @@ def run_scata(config_file,pr=None):
                                       "w"))
             #cPickle.dump(uniseq_to_seq,open(settings["work_dir"] + "/seq_to_uniseq.pick",
             #                               "w"))
-
+            xgj3_mem=3
             xgj3 = GridJob("ScataS" + config_file,
                            settings["work_dir"], settings["sge_params"],
-                           30, "2G", pr )
+                           30, str(xgj3_mem) + "G", pr )
 
             cts = [str(a) for a in clusters_to_summarise]
             for cl_group in [cts[x:x+100] \
@@ -402,7 +431,8 @@ def run_scata(config_file,pr=None):
             while xgj3.get_num_failed() > 0:
                 print "Some jobs failed, retrying"
                 xgj3.reset_failed()
-		xgj3.vf="6G"
+                xgj3_mem = xgj3_mem * 2
+                xgj3.vf=str(xgj3_mem) + "G"
                 xgj3.start()
                 if pr:
                     pr.set_msg("(3/3) Retry summarising: ")
