@@ -5,6 +5,37 @@ from Bio.Alphabet import generic_dna
 import difflib
 
 
+def get_tagset(tagset, tagset_dir):
+    if int(tagset) > 0:
+        tags = dict()
+        tag_file = open( tagset_dir + "/" + str(tagset) + ".txt")
+        tag_length = 0
+        # Parse tag-file and perform sanity checks
+        for line in tag_file:
+            line_list = list()
+            line = line.rstrip()
+            if line == "":
+                continue
+
+            line_list = line.split(";")
+            #print line_list
+            if len(line_list) < 2:
+                continue
+            tags[line_list[1]] = dict(tag=line_list[0],
+                                      matching = set() )
+            if tag_length == 0:
+                tag_length = len(line_list[1])
+
+            if len(line_list) > 2:
+                for i in range(2,len(line_list)):
+                    if line_list[i] != "":
+                        tags[line_list[1]]['matching'] |= set([line_list[i]])
+            
+            tags["_____length"] = tag_length
+        return tags
+    return { }
+
+
 def filter_full(seq_record, qual, min_length, mean_min, min_qual):
     if len(seq_record.seq) < min_length:
         return [None, "too_short"]
@@ -134,6 +165,7 @@ class DeTagSeq:
         seq_str = str(seq)
         seq_list = [trans_table[x] if not x == 'N' else 0 for x in str(seq).upper() if x in trans_table]
         p5_pos = -1
+        accepted_t3 = set()
         if len(self.p5):
             for x in range(0, min(len(seq_str), 100 + len(self.p5) ) - len(self.p5)):
                 m = 0
@@ -174,7 +206,8 @@ class DeTagSeq:
             tag_len = self.t5["_____length"]
             tag_seq = seq_str[(p5_pos - tag_len):p5_pos]
             try:
-                result["tag_name"] = self.t5[tag_seq]
+                result["tag_name"] = self.t5[tag_seq]['tag']
+                accepted_t3 = self.t5[tag_seq]['matching']
             except KeyError:
                 result["status"] = "no_tag5"
                 if q:
@@ -209,7 +242,10 @@ class DeTagSeq:
                 tag_seq = seq_str[(p3_pos + len(self.p3)):(p3_pos + len(self.p3) + tag_len)]
                 tag_seq = str(Seq(tag_seq,generic_dna).reverse_complement())
                 try:
-                    result["tag_name"] += ("_" + self.t3[tag_seq])
+                    if self.t3[tag_seq]['tag'] not in accepted_t3:
+                        result['status']='chimeric_tag'
+                        return (result, None)
+                    result["tag_name"] += ("_" + self.t3[tag_seq]['tag'])
                 except KeyError:
                     result["status"] = "no_tag3"
                     if q:

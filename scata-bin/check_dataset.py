@@ -59,10 +59,10 @@ def master_loop(argv, mpi_checker):
     log_entry("Checking dataset %d for user %s." \
               % (datasetid, email))
 
-    tags5 = get_tagset(row["Tagset5"])
+    tags5 = FilterSeq.get_tagset(row["Tagset5"], tagset_dir)
     if len(tags5) == 0:
         print "No 5' tags"
-    tags3 = get_tagset(row["Tagset3"])
+    tags3 = FilterSeq.get_tagset(row["Tagset3"], tagset_dir)
     if len(tags3) == 0:
         print "No 3' tags"
 
@@ -239,6 +239,7 @@ def master_loop(argv, mpi_checker):
                    ["no_tag5", "Missing 5' tag"],
                    ["tagset3name", "Tagset 3"],
                    ["no_tag3", "Missing 3' tag"],
+                   ["chimeric_tag", "Chimeric/non-matching tag combination"],
                    ["shorter_than_primer", "High quality sequence shorter than primer"] ]
 
         for tp in to_print:
@@ -315,36 +316,6 @@ def master_loop(argv, mpi_checker):
 
 
 
-
-def get_tagset(tagset):
-    if int(tagset) > 0:
-        tags = dict()
-        tag_file = open( tagset_dir + "/" + str(tagset) + ".txt")
-        tag_length = 0
-        # Parse tag-file and perform sanity checks
-        for line in tag_file:
-            line_list = list()
-            if line == "":
-                continue
-            if line[-1] == "\n":
-                line = line[:-1]
-            if line!="" and line[-1] == "\r":
-                line = line[:-1]
-
-            line_list = line.split(";")
-            #print line_list
-            if len(line_list) != 2:
-                continue
-            tags[line_list[1]] = line_list[0]
-            if tag_length == 0:
-                tag_length = len(line_list[1])
-
-            if tag_length != len(line_list[1]):
-                raise Exception("Different length on tags")
-            
-            tags["_____length"] = tag_length
-        return tags
-    return { }
 
 # Function to process a batch of reads
 def process_reads(read_job):
