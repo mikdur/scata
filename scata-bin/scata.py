@@ -103,7 +103,7 @@ def run_scata(config_file,pr=None):
                 f.close()
 
     # Downsample tags to given size
-    if len(tag_mapping) and settings.get("downsample_size", 0):
+    if len(tag_mapping) and int(settings.get("downsample_size", 0)) > 0:
         print "Downsampling tags to at most %s reads" % settings["downsample_size"]
 
         # Generate subsets
