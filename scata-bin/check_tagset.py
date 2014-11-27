@@ -73,7 +73,7 @@ try:
 
         if len(ll) > 2:
             for i in range(2, len(ll)):
-                if not re.match("^[-A-Za-z0-9_]+$",ll[i])
+                if not re.match("^[-A-Za-z0-9_]+$",ll[i]):
                     errors += "Pairing tag name %d on line %d contains invalid characters\n" % (i + 1, line_no)
                     
         if len(errors) > 2000:
