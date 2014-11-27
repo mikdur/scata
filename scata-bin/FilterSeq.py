@@ -242,7 +242,7 @@ class DeTagSeq:
                 tag_seq = seq_str[(p3_pos + len(self.p3)):(p3_pos + len(self.p3) + tag_len)]
                 tag_seq = str(Seq(tag_seq,generic_dna).reverse_complement())
                 try:
-                    if self.t3[tag_seq]['tag'] not in accepted_t3:
+                    if len(accepted_t3) and self.t3[tag_seq]['tag'] not in accepted_t3:
                         result['status']='chimeric_tag'
                         return (result, None)
                     result["tag_name"] += ("_" + self.t3[tag_seq]['tag'])
