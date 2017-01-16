@@ -6,11 +6,10 @@ from  xml.parsers.expat import ExpatError
 task_template = """#!/bin/sh
 
 #$ -l h_vmem=%s,h_rt=0:%d:0
-#$ -wd /mykopat/scata/tmp
+#$ -wd /scata/scata-run/tmp
 #$ -o %s
 #$ -N '%s'
-#$ -M mikael.durling@mykopat.slu.se
-#$ -m a
+#$ -M mikael.durling@slu.se
 #$ -V
 #$ -j y
 #$ %s
@@ -18,7 +17,7 @@ task_template = """#!/bin/sh
 
 . /opt/Modules/default/init/bash
 module load mpi4py biopython
-cd /mykopat/scata/tmp
+cd /scata/scata-run/tmp
 
 
 %s
@@ -63,7 +62,7 @@ class SGEJob:
     def __init__(self, descr,wd, params="",runtime=2,vf="2G",printer=None):
         self.descr = descr
         self.wd = wd
-        self.prefix = wd + "/" + self.descr.replace("/","_").replace(":","_").replace(" ","_").replace("_mykopat_scata_run_config_","") + "_" + str(time.time())
+        self.prefix = wd + "/" + self.descr.replace("/","_").replace(":","_").replace(" ","_").replace("_scata_scata-run_run_config_","") + "_" + str(time.time())
         self.tasks = [ ]
         self.tasks_by_id = {}
         self.locked = False
@@ -142,7 +141,7 @@ class SGEJob:
             task_script = task_template % ( self.vf,
                                             self.runtime,
                                             self.prefix + "_sge$JOB_ID." + t["id"] + ".out",
-                                            self.descr.replace("/","_").replace(":","_").replace("_mykopat_scata_run_config_","") + "_id_" + t["id"],
+                                            self.descr.replace("/","_").replace(":","_").replace("_scata_scata-run_run_config_","") + "_id_" + t["id"],
                                             self.params,
                                             deps,
                                             t["cmd"] + " '" + "' '".join(t["args"]) + "'")
@@ -216,7 +215,7 @@ exit((os.system(t['cmd'] + " '" + "' '".join(t["args"]) + "'") & 0xff00) >> 8)
         task_script = task_template % ( self.vf,
                                         self.runtime,
                                         self.prefix + "_sge$JOB_ID.$TASK_ID.out",
-                                        self.descr.replace("/","_").replace(":","_").replace("_mykopat_scata_run_config_",""),
+                                        self.descr.replace("/","_").replace(":","_").replace("_scata_scata_run_run_config_",""),
                                         self.params,
                                         t_list,
                                         self.prefix + "_runner.py $SGE_TASK_ID")
