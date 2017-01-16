@@ -166,13 +166,14 @@ def run_scata(config_file,pr=None):
             new_seq = reduce_homopolymer(seq,int(settings["max_homopolymer"]))
         else:
             new_seq = seq
-        
+            
         if new_seq not in new_seqs:
             new_seqs[new_seq] = dict()
         new_seqs[new_seq][seq]=seqs[seq]
-
-    
+        
     seqs = new_seqs
+                                      
+        
     print "Total number of unique seqs after homopolymer collapse: ", len(seqs.keys())
 
     uniseq_to_seq = UniseqDB(settings["work_dir"] + "/uniseq_to_seq.pick", "w")
@@ -231,11 +232,14 @@ def run_scata(config_file,pr=None):
     cluster_program = "cluster_blast.py"
     mem_need="1G"
 
-    step = 2000
+    step = 4000
     
     if "cluster_engine" in settings:
         if settings["cluster_engine"] == "usearch":
             cluster_program = "cluster_usearch.py"
+            step = 4000
+        elif settings["cluster_engine"] == "vsearch":
+            cluster_program = "cluster_vsearch.py"
             step = 10000
 	   
     
