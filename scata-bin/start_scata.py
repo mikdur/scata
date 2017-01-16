@@ -3,7 +3,6 @@
 import sys, time, sge, os, re, traceback, random
 import scata
 
-#sys.path.append("/sw/lib/python2.5/site-packages/")
 import MySQLdb
 
 from Bio import SeqIO
@@ -77,12 +76,6 @@ email = db_c.fetchone()["Email"]
 
 log_entry("Preparing job %d for user %s (%d)" % (jobid, email, owner))
 
-arch_prefix="FOO"
-if sys.platform == "darwin":
-	arch_prefix = "/mykopat/Darwin-x86_64/bin/"
-else:
-	arch_prefix = "/usr/bin/"
-print "Arch prefix", arch_prefix
 # Parameters that the is not allowed to touch:
 
 config = { "job_id" :         { "value": "scata%04d" % (jobid),
@@ -101,11 +94,13 @@ config = { "job_id" :         { "value": "scata%04d" % (jobid),
                                 "descr": "Directory where result files are stored" },
            "tags":            { "value": tagset_dir + "/" + str(row["tagSet"]) + ".txt",
                                 "descr": "File with tagset definition" },
-           "formatdb":        { "value": "/mykopat/scata/bin/formatdb",
+           "formatdb":        { "value": formatdb_path,
                                 "descr": "Path to formatdb executable" },
-           "usearch":         { "value": "/mykopat/scata/bin/usearch",
+           "usearch":         { "value": usearch_path,
                                 "descr": "Path to usearch" },
-           "blastall":        { "value": "/mykopat/scata/bin/blastall",
+           "vsearch":         { "value": vsearch_path,
+                                "descr": "Path to usearch" },
+           "blastall":        { "value": blastall_path,
                                 "descr": "Path to blastall executable" },
            "muscle":          { "value": "muscle -diags -maxiters 2",
                                 "descr": "Path and options to muscle"},
@@ -223,7 +218,7 @@ if len(log_text) == 0:
         os.system("rm -rf %s %s %s" % (config["work_dir"]["value"], config["output_dir"]["value"], config_file) )
         db.commit()
     except SystemExit:
-        send_mail("mikael.durling@mykopat.slu.se", "Job %d deleted while running" % (jobid), 
+        send_mail("mikael.durling@slu.se", "Job %d deleted while running" % (jobid), 
                   "Owner %s\nJobId: %d\n" % (email,
                                              jobid))
         os.system("rm -rf %s %s %s" % (config["work_dir"]["value"], config["output_dir"]["value"], config_file) )
@@ -233,7 +228,7 @@ if len(log_text) == 0:
                                           exceptionTraceback))
         open(log_dir + "/exceptions_%04d.txt" % (jobid), "w").write("%s\n\n%s" % (repr(sys.exc_info()),
                                                                                   exception_text))
-        send_mail("mikael.durling@mykopat.slu.se", "Job %d failed" % (jobid), 
+        send_mail("mikael.durling@slu.se", "Job %d failed" % (jobid), 
                   "Owner %s\nJobId: %d\nException: %s\nBacktrace %s" % (email,
                                                          jobid,
                                                          repr(sys.exc_info()),
