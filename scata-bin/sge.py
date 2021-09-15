@@ -15,8 +15,7 @@ task_template = """#!/bin/sh
 #$ %s
 %s
 
-. /opt/Modules/default/init/bash
-module load mpi4py biopython
+. /scata/scata-system/scata-env/bin/activate
 cd /scata/scata-run/tmp
 
 
@@ -83,7 +82,7 @@ class SGEJob:
         else:
             self.printer = printer
         
-        self.sge_path = "/opt/sw/sge/8.1.6/bin/lx-amd64/"
+        self.sge_path = "/opt/sw/sge/8.1.9/bin/lx-amd64/"
 
     def add_task(self, cmd, args, dep=[]):
         if self.locked: raise Exception("Can't add tasks to locked job")
