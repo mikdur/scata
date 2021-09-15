@@ -8,7 +8,6 @@ from array import array
 
 
 
-sys.path.append("/mykopat/Linux-x86_64/lib/python2.5/site-packages/")
 import MySQLdb
 
 import PyroParser, FastqParser, FilterSeq
@@ -260,7 +259,7 @@ def master_loop(argv, mpi_checker):
                                     exceptionTraceback))
         open(log_dir + "/check_dataset_exceptions_%04d.txt" % (datasetid),
              "w").write("%s\n%s" % (repr(sys.exc_info()), exception_text))
-        send_mail("mikael.durling@mykopat.slu.se",
+        send_mail("mikael.durling@slu.se",
                   "Check DataSet %d failed" % (datasetid), 
                   "Owner %s\nDatasetid: %d\nException: %s\nBacktrace %s" \
                   % (email,
