@@ -2,7 +2,6 @@
 
 import constants, uniseq
 import sys, os, re, cPickle
-from Bio.Blast import NCBIXML, NCBIStandalone
 from Bio import AlignIO
 from subprocess import call
 
