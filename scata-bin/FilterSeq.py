@@ -167,7 +167,7 @@ class DeTagSeq:
         p5_pos = -1
         accepted_t3 = set()
         if len(self.p5):
-            for x in range(0, min(len(seq_str), 2000 + len(self.p5) ) - len(self.p5)):
+            for x in range(0, min(len(seq_str), 20000 + len(self.p5) ) - len(self.p5)):
                 m = 0
                 for i in range(len(self.p5)):
                     if seq_list[x + i] & self.p5[i]:
@@ -185,7 +185,7 @@ class DeTagSeq:
                 seq_str = str(seq)
                 seq_list = [trans_table[x] if not x == 'N' else 0 for x in str(seq).upper() if x in trans_table]
 
-                for x in range(0, min(len(seq_str), 2000 + len(self.p5) ) - len(self.p5)):
+                for x in range(0, min(len(seq_str), 20000 + len(self.p5) ) - len(self.p5)):
                     m = 0
                     for i in range(len(self.p5)):
                         if seq_list[x + i] & self.p5[i]:
