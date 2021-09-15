@@ -83,6 +83,17 @@ def run_scata(config_file,pr=None):
                           settings["job_name"] + "\n")
         cluster_summary.write("No sequences to cluster.")
 
+    if settings.get("remove_lowfreq", 0):
+        print "Removing low frequency genotypes (< %s)" % settings["remove_lowfreq"]
+        new_seqs = dict()
+        lf = int(settings["remove_lowfreq"])
+        for k, v in seqs.iteritems():
+            if len(v) > lf:
+                new_seqs[k] = v
+        seqs = new_seqs
+        new_seqs = dict()
+        print "Number of unique genotypes after low frequency pruning: ", len(seqs)
+
     print "Dumping tag/seqID mappings"
     tag_mapping = { }
     for (k, v) in seqs.iteritems():
