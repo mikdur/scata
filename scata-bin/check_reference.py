@@ -4,7 +4,6 @@ import constants
 import sys, time, sge, re, os, traceback
 
 
-sys.path.append("/mykopat/Linux-x86_64/lib/python2.5/site-packages/")
 import MySQLdb
 
 from Bio import SeqIO
@@ -99,8 +98,8 @@ try:
             errors += "Too many warnings. Please revise your reference set.\n"
             break
 
-        if n > 50000:
-            errors += "More than 50k references. Is this really a relevant reference set?"
+        if n > 1000000:
+            errors += "More than 1M references. Is this really a relevant reference set?"
             break
 
 
@@ -115,7 +114,7 @@ except:
      exception_text = "".join(traceback.format_exception(exceptionType, exceptionValue,
                                     exceptionTraceback))
      open(log_dir + "/check_ref_exceptions_%04d.txt" % (refsetid), "w").write(repr(sys.exc_info()))
-     send_mail("mikael.durling@mykopat.slu.se", "Check RefSet Job %d failed" % (refsetid), 
+     send_mail("mikael.durling@slu.se", "Check RefSet Job %d failed" % (refsetid), 
                "Owner %s\nRefsetid: %d\nException: %s\nBacktrace %s" % (email,
                                                                      refsetid,
                                                                      repr(sys.exc_info()),
