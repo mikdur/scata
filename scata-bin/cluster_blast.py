@@ -8,7 +8,8 @@ print os.uname()
 print sys.argv
 
 
-from Bio.Blast import NCBIXML, NCBIStandalone
+from Bio.Blast import NCBIXML
+from Bio.SearchIO._legacy import NCBIStandalone
 from subprocess import call
 
 settings = cPickle.load(open(sys.argv[1] + "/settings.pick"))
