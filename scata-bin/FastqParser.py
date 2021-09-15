@@ -151,11 +151,3 @@ class Pair:
         return FastQPairQualSeq(s1, s2, self.kmer, self.hsp, self.min)
     
 
-# Code to test pairwise parser
-if __name__ == "__main__":
-    d = Paired("/proj/mykopat-scata/sample_data/Sample_Pool1/test.1.fq",
-               "/proj/mykopat-scata/sample_data/Sample_Pool1/test.2.fq")
-    for i in range(1000):           
-        s=d.next()
-        s.get()
-        print("\n\n")
