@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import sys, time, sge, os, re, traceback, random
 import scata
@@ -102,7 +102,7 @@ config = { "job_id" :         { "value": "scata%04d" % (jobid),
                                 "descr": "Path to usearch" },
            "blastall":        { "value": blastall_path,
                                 "descr": "Path to blastall executable" },
-           "muscle":          { "value": "muscle -diags -maxiters 2",
+           "muscle":          { "value": "/scata/scata-system/bin/muscle -diags -maxiters 2",
                                 "descr": "Path and options to muscle"},
            "polyh_num":       { "value": "3",
                                 "descr": "Deprecated option of polyh scoring" },
