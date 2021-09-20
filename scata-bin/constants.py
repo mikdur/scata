@@ -1,34 +1,41 @@
 # File defining all system constants.
+import sys
 
-
-db_host = "scata.mykopat.slu.se"
-db_user = "scata_dev"
+db_host = ""
+db_user = ""
 db_pass = ""
-db_db   = "scata_dev"
+db_db   = ""
 
 
-base_dir = "/proj/mykopat-scata/dev/scata/scata-bin"
-tagset_dir = "/mykopat/scata/dev/tagsets"
-refset_dir = "/mykopat/scata/dev/referencesets"
-dataset_dir = "/mykopat/scata/dev/datasets"
-file_dir = "/mykopat/scata/dev/files"
-result_dir = "/mykopat/scata/dev/results"
-run_dir = "/mykopat/scata/dev/run"
-log_dir = "/mykopat/scata/dev/log"
+base_dir = "/scata/scata-system/scata-bin"
+tagset_dir = "/scata/scata-data/tagsets"
+refset_dir = "/scata/scata-data/referencesets"
+dataset_dir = "/scata/scata-data/datasets"
+result_dir = "/scata/scata-data/results"
+file_dir = "/scata/scata-files/files"
+run_dir = "/scata/scata-run/run"
+log_dir = "/scata/scata-run/log"
 
-ref_long = 1200
-ref_max_len=2000
+# Paths
+formatdb_path = "/scata/scata-system/bin/formatdb"
+usearch_path = "/scata/scata-system/bin/usearch"
+vsearch_path = "/scata/scata-system/bin/vsearch"
+blastall_path = "/scata/scata-system/bin/blastall"
 
-job_script_dir = "/mykopat/scata/dev/tmp"
+ref_long = 3000
+ref_max_len=6000
+
+job_script_dir = "/scata/scata-run/tmp"
 
 
 sge_params_backend = '-V -R y -w n -p -500 -P '
 sge_params_scata_jobs = '-V -R n -w n -r y -p -600 -P '
 sge_params_scata = '-V -R n -w n -p -700 -q scata@* -P '
 
-mail_from = "SCATA <noreply@mykopat.slu.se>"
+mail_from = "SCATA <noreply@slu.se>"
 
 import sys, time
+
 
 def log_entry(text):
     log_file = open(log_dir + "/scata.log", "a")
@@ -47,7 +54,7 @@ def send_mail(to, subject, body):
     msg["From"] = mail_from
 
     #sys.stdout.write(msg.as_string())
-    s = smtplib.SMTP("my-mgrid.grid.mykopat.slu.se")
-    s.sendmail("www-data@heterobasidion.mykopat.slu.se", [to], msg.as_string())
+    s = smtplib.SMTP("my-gridfront.grid.mykopat.slu.se")
+    s.sendmail("www-data@my-scata.mykopat.slu.se", [to], msg.as_string())
     s.quit()
     
