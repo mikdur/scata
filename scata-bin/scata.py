@@ -5,9 +5,10 @@ import sys, os, shutil, math
 from subprocess import call
 from PyroParser import PyroRes
 from sge import SGEJob as GridJob
-import cPickle
+import pickle
 import re, random
 from Bio import SeqIO
+from functools import reduce
 
 
 
@@ -42,7 +43,7 @@ def run_scata(config_file,pr=None):
     os.makedirs(settings["output_dir"] + "/tag_fastafiles")
     os.makedirs(settings["output_dir"] + "/tag_mappings")
 
-    cPickle.dump(settings,open(settings["work_dir"] + "/settings.pick", "w"))
+    pickle.dump(settings,open(settings["work_dir"] + "/settings.pick", "w"))
 
     cpu = 0.0
     wallclock = 0.0
@@ -50,32 +51,32 @@ def run_scata(config_file,pr=None):
 
 
 
-    print "Reading pyro results and doing initial redundancy screening..."
+    print("Reading pyro results and doing initial redundancy screening...")
     seqs = { }
     used_tags = dict()
     seq_stats = { }
     global_seqs = 0
 
     for seq_a in zip( settings["454names"].split(),
-                    zip(settings["454seq"].split(), settings["454stat"].split())):
+                    list(zip(settings["454seq"].split(), settings["454stat"].split()))):
         # Load datasets
-        t_seqs = cPickle.load(open(seq_a[1][0]))
-        print "Adding ", seq_a[0]
+        t_seqs = pickle.load(open(seq_a[1][0]))
+        print("Adding ", seq_a[0])
         added_seqs = 0
-        for (k, v) in t_seqs.iteritems():
+        for (k, v) in t_seqs.items():
             k = k.upper()
             global_seqs += len(v)
             added_seqs += len(v)
             seqs[k] = seqs.get(k, []) + v
             for t in v:
                 used_tags[t[0]] = used_tags.get(t[0],0) + 1
-        print "added %d sequences" % ( added_seqs )
+        print("added %d sequences" % ( added_seqs ))
         
         # Load statistics
-        seq_stats[seq_a[0]] = cPickle.load(open(seq_a[1][1]))
+        seq_stats[seq_a[0]] = pickle.load(open(seq_a[1][1]))
 
 
-    print "Number of unique genotypes: ", len(seqs)
+    print("Number of unique genotypes: ", len(seqs))
     if len(seqs) == 0:
         cluster_summary = open(settings["output_dir"] + "/all_clusters.txt","w")
 
@@ -84,19 +85,19 @@ def run_scata(config_file,pr=None):
         cluster_summary.write("No sequences to cluster.")
 
     if settings.get("remove_lowfreq", 0):
-        print "Removing low frequency genotypes (< %s)" % settings["remove_lowfreq"]
+        print("Removing low frequency genotypes (< %s)" % settings["remove_lowfreq"])
         new_seqs = dict()
         lf = int(settings["remove_lowfreq"])
-        for k, v in seqs.iteritems():
+        for k, v in seqs.items():
             if len(v) > lf:
                 new_seqs[k] = v
         seqs = new_seqs
         new_seqs = dict()
-        print "Number of unique genotypes after low frequency pruning: ", len(seqs)
+        print("Number of unique genotypes after low frequency pruning: ", len(seqs))
 
-    print "Dumping tag/seqID mappings"
+    print("Dumping tag/seqID mappings")
     tag_mapping = { }
-    for (k, v) in seqs.iteritems():
+    for (k, v) in seqs.items():
         for s in v:
             if len(s) >= 4:
                 if s[3][0] not in tag_mapping:
@@ -105,8 +106,8 @@ def run_scata(config_file,pr=None):
                     tag_mapping[s[3][0]][s[3][1]] = tag_mapping[s[3][0]].get(s[3][1], []) + [ s[3][2] ]
 
     if len(tag_mapping):
-        for (d, v) in tag_mapping.iteritems():
-            for (t, s) in v.iteritems():
+        for (d, v) in tag_mapping.items():
+            for (t, s) in v.items():
                 f = open(settings["output_dir"] + "/tag_mappings/" + d.replace(" ","_").replace("/","_") + "-" + 
                      t.replace(" ","_").replace("/","_") + ".txt", "w")
                 for s_id in s:
@@ -115,18 +116,18 @@ def run_scata(config_file,pr=None):
 
     # Downsample tags to given size
     if len(tag_mapping) and int(settings.get("downsample_size", 0)) > 0:
-        print "Downsampling tags to at most %s reads" % settings["downsample_size"]
+        print("Downsampling tags to at most %s reads" % settings["downsample_size"])
 
         # Generate subsets
-        for d, v in tag_mapping.iteritems():
-            for tag in v.keys():
+        for d, v in tag_mapping.items():
+            for tag in list(v.keys()):
                 if len(v[tag]) > int(settings["downsample_size"]):
                     v[tag] = set(random.sample(v[tag], int(settings["downsample_size"])))
     
 
         # Filter seqs to only contain the subsample
         keys_to_delete = [ ]
-        for k in seqs.keys():
+        for k in list(seqs.keys()):
             new_entry = []
             for s in seqs[k]:
                 if s[3][0] in tag_mapping \
@@ -138,13 +139,13 @@ def run_scata(config_file,pr=None):
                 keys_to_delete.append(k)
         for k in keys_to_delete:
             del seqs[k]
-        print "Number of unique genotypes after downsampling: %d" % len(seqs)
+        print("Number of unique genotypes after downsampling: %d" % len(seqs))
         
         
     
     # Read reference sequences if given in config.
     if settings["reference_seqs"] != "none":
-        print "Adding reference sequences to database..."
+        print("Adding reference sequences to database...")
         ref_cnt = 0
         for r_f in settings["reference_seqs"].split():
             ref_fasta = SeqIO.parse(open(r_f), "fasta")
@@ -156,12 +157,12 @@ def run_scata(config_file,pr=None):
                 seqs[str(seq_record.seq).upper()] = \
                   seqs.get(str(seq_record.seq).upper(), [] ) + [["_____ref", seq_record.id, False]]
 
-        print "Number of reference sequences: ", ref_cnt
+        print("Number of reference sequences: ", ref_cnt)
 
 
-    print "Total number of genotypes in analysis: ", len(seqs.keys())
+    print("Total number of genotypes in analysis: ", len(list(seqs.keys())))
 
-    if len(seqs.keys()) == 0:
+    if len(list(seqs.keys())) == 0:
 	ut = open(settings["output_dir"] + "/no_sequences_to_cluster.txt", "wct")
 	ut.write("Cowardly refusing to cluster 0 sequences!")
 	ut.close()
@@ -172,7 +173,7 @@ def run_scata(config_file,pr=None):
 
     new_seqs = dict()
 
-    for seq in seqs.keys():
+    for seq in list(seqs.keys()):
         if "max_homopolymer" in settings and int(settings["max_homopolymer"]) > 0:
             new_seq = reduce_homopolymer(seq,int(settings["max_homopolymer"]))
         else:
@@ -185,7 +186,7 @@ def run_scata(config_file,pr=None):
     seqs = new_seqs
                                       
         
-    print "Total number of unique seqs after homopolymer collapse: ", len(seqs.keys())
+    print("Total number of unique seqs after homopolymer collapse: ", len(list(seqs.keys())))
 
     uniseq_to_seq = UniseqDB(settings["work_dir"] + "/uniseq_to_seq.pick", "w")
 
@@ -228,7 +229,7 @@ def run_scata(config_file,pr=None):
     # Close shelve to make sure it is written to disk
     uniseq_to_seq.sync()
 
-    cPickle.dump(uniseq_to_seq.keys(),open(settings["work_dir"] + "/seqs.pick",
+    pickle.dump(list(uniseq_to_seq.keys()),open(settings["work_dir"] + "/seqs.pick",
                                   "w"))
 
 
@@ -263,7 +264,7 @@ def run_scata(config_file,pr=None):
     job_num=0;
 
 
-    print "Preparing Grid job"
+    print("Preparing Grid job")
     xgj_mem=1
     xgj = GridJob("ScataC" + config_file,
                   settings["work_dir"], settings["sge_params"],
@@ -276,16 +277,16 @@ def run_scata(config_file,pr=None):
             xgj.add_task( (settings["lib_dir"] + "/" + cluster_program), 
                           [ settings["work_dir"], str(i), str(j), str(step), str(job_num) + ".fas" ])
             files.append(str(job_num) + ".fas")
-    print "Number of blast jobs: ", len(files)
+    print("Number of blast jobs: ", len(files))
 
     xgj.start()
 
-    print "Waiting for Grid clustering job to finish"
+    print("Waiting for Grid clustering job to finish")
     xgj.check()
     xgj.wait()
 
     while xgj.get_num_failed() > 0:
-        print "Some jobs failed, retrying"
+        print("Some jobs failed, retrying")
         xgj.reset_failed()
         xgj_mem = xgj_mem * 2
         xgj.vf=str(xgj_mem) + "G"
@@ -300,7 +301,7 @@ def run_scata(config_file,pr=None):
     cpu += xgj.get_time()["cpu"]
     wallclock += xgj.get_time()["wallclock"]
 
-    print "Clustering done"
+    print("Clustering done")
 
     xgj.clean()
 
@@ -314,8 +315,8 @@ def run_scata(config_file,pr=None):
     while True:
         retries += 1
         try:
-            print "Merging clusters..."
-            pick_files = map(lambda x: [settings["work_dir"] + "/" + x + ".pick", []], files)
+            print("Merging clusters...")
+            pick_files = [[settings["work_dir"] + "/" + x + ".pick", []] for x in files]
             #print pick_files
             xgj2 = GridJob("ScataM" + config_file,
                            settings["work_dir"], settings["sge_params"], 90, str(xgj2_mem) + "G", pr)
@@ -330,8 +331,8 @@ def run_scata(config_file,pr=None):
                     filename = settings["work_dir"] + "/merge_out" + str(outnum) + ".pick"
                     id = xgj2.add_task(settings["lib_dir"] + "/merge_clusters.py",
                                        [ settings["work_dir"], filename ] +
-                                       map(lambda x: x[0], p), 
-                                       reduce(lambda a,b: a + b, map(lambda x: x[1], p)))
+                                       [x[0] for x in p], 
+                                       reduce(lambda a,b: a + b, [x[1] for x in p]))
                     pick_files.append([filename, [id]])
                     outnum += 1
 
@@ -347,7 +348,7 @@ def run_scata(config_file,pr=None):
             xgj2.start()
             xgj2.wait()
             while xgj2.get_num_failed() > 0:
-                print "Some jobs failed, retrying"
+                print("Some jobs failed, retrying")
                 xgj2.reset_failed()
                 xgj2_mem = xgj2_mem * 2
                 xgj2.vf=str(xgj2_mem) + "G"
@@ -363,23 +364,22 @@ def run_scata(config_file,pr=None):
             wallclock += xgj2.get_time()["wallclock"]
 
 
-            clusters = map(lambda a: dict( set = a ), 
-                           cPickle.load(open(pick_files[0][0])))
+            clusters = [dict( set = a ) for a in pickle.load(open(pick_files[0][0]))]
             if int(settings["graph"]) == 1:
-                links = cPickle.load(open(pick_files[0][0] + ".links"))
+                links = pickle.load(open(pick_files[0][0] + ".links"))
             xgj2.clean()
             break
         except OSError:
             if retries > 7:
                 raise Exception("Too many retries")
-            print "Retrying"
+            print("Retrying")
 
     while True:
         try:
 
             # Go through clusters, assign names and if not singleton, add to 
             # job list for summarising cluster stats
-            print "Summarising clusters"
+            print("Summarising clusters")
             clusters_to_summarise = [ ]
 
             for c in enumerate(clusters):
@@ -400,7 +400,7 @@ def run_scata(config_file,pr=None):
 
                     repseqs = [ ]
                     for uniseq in cl["set"]:
-                        for subseq in uniseq_to_seq[uniseq]["seqs"].keys():
+                        for subseq in list(uniseq_to_seq[uniseq]["seqs"].keys()):
                             repseqs.append([uniseq, subseq, uniseq_to_seq[uniseq]["seqs"][subseq]["count"]])
 
 
@@ -421,7 +421,7 @@ def run_scata(config_file,pr=None):
                                            foo = True)
 
 
-            cPickle.dump(clusters,open(settings["work_dir"] + "/clusters.pick",
+            pickle.dump(clusters,open(settings["work_dir"] + "/clusters.pick",
                                       "w"))
             #cPickle.dump(uniseq_to_seq,open(settings["work_dir"] + "/seq_to_uniseq.pick",
             #                               "w"))
@@ -445,7 +445,7 @@ def run_scata(config_file,pr=None):
             xgj3.wait()
 
             while xgj3.get_num_failed() > 0:
-                print "Some jobs failed, retrying"
+                print("Some jobs failed, retrying")
                 xgj3.reset_failed()
                 xgj3_mem = xgj3_mem * 2
                 xgj3.vf=str(xgj3_mem) + "G"
@@ -461,7 +461,7 @@ def run_scata(config_file,pr=None):
             wallclock += xgj3.get_time()["wallclock"]
 
             for cluster in clusters_to_summarise:
-                d = cPickle.load(open(settings["work_dir"] + "/cluster" + str(cluster) + ".pick"))
+                d = pickle.load(open(settings["work_dir"] + "/cluster" + str(cluster) + ".pick"))
                 clusters[cluster]["cl_stats"] = d
 
             #cPickle.dump(clusters,open(settings["work_dir"] + "/clusters.pick",
@@ -474,7 +474,7 @@ def run_scata(config_file,pr=None):
             xgj3.clean()
             break
         except ValueError:
-            print "Retrying"
+            print("Retrying")
 
     if pr:
     	pr.set_msg("Done.")
@@ -528,7 +528,7 @@ def run_scata(config_file,pr=None):
     clusters.sort(None,lambda cl: cl["cl_stats"]["total_size"],True)
 
     # Create a summary file and a fasta for all clusters
-    print "Creating general cluster summary statistics"
+    print("Creating general cluster summary statistics")
 
     cluster_summary = open(settings["output_dir"] +
                            "/all_clusters_" + settings["job_id"] + ".txt","w")
@@ -668,13 +668,12 @@ Core time:;%.3f
     cluster_summary.close()
     cluster_fas.close()
 
-    print "Dumping cluster alignments"
-    for c in filter(lambda c: c["cl_stats"]["total_size"] > 1, 
-                    clusters):
+    print("Dumping cluster alignments")
+    for c in [c for c in clusters if c["cl_stats"]["total_size"] > 1]:
         ali_fas = open(settings["output_dir"] + "/clusters/" + c["id"] + ".fas","w")
         for uniseq in list(c["set"]):
             for subseq in uniseq_to_seq[uniseq]["seqs"]:
-                for (tag, ids) in uniseq_to_seq[uniseq]["seqs"][subseq]["tags"].iteritems():
+                for (tag, ids) in uniseq_to_seq[uniseq]["seqs"][subseq]["tags"].items():
                     #print tag, ids
                     for sid in ids:
                         ali_fas.write(">" + sid[0] + "_" + sid[1] + \
@@ -685,16 +684,15 @@ Core time:;%.3f
                 ali_fas.write(">" + rseq["id"] + "\n" + rseq["seq"].replace("-", "") + "\n")
 
         ali_fas.close()
-    print "Dumping cluster reference alignments"
-    for c in filter(lambda c: c["cl_stats"]["total_size"] > 1, 
-                    clusters):
+    print("Dumping cluster reference alignments")
+    for c in [c for c in clusters if c["cl_stats"]["total_size"] > 1]:
 	if "repseq_alist" in c["cl_stats"]:
 	        ali_fas = open(settings["output_dir"] + "/repseq_alignments/" + c["id"] + ".fas","w")
                 for rseq in c["cl_stats"]["repseq_alist"]:
                     ali_fas.write(">" + rseq["id"] + "\n" + rseq["seq"] + "\n")
         	ali_fas.close()
 
-    print "Summarising results per tag"
+    print("Summarising results per tag")
     tag_stats = { }
     global_tag_summary = open(settings["output_dir"] + "/all_tags.txt","w")
     tag_by_cluster = open(settings["output_dir"] + "/all_tag_by_cluster.txt", "w")
@@ -703,8 +701,7 @@ Core time:;%.3f
 
     global_tag_summary.write("Tag name;Size;Prop of global;Singletons;Prop singletons;Global singletons;Prop global;Prop of total global;#1;#2;#3;#4;#5;#6;#7;#8;#9;#10\n")
 
-    tag_by_cluster_clusters = filter(lambda c: c["cl_stats"]["total_size"] > 1, 
-                                     clusters)[:int(settings["tag_by_cluster_max"])]
+    tag_by_cluster_clusters = [c for c in clusters if c["cl_stats"]["total_size"] > 1][:int(settings["tag_by_cluster_max"])]
 
     tag_by_cluster.write("Tag")
     tag_by_cluster_c.write("Tag")
@@ -715,7 +712,7 @@ Core time:;%.3f
     tag_by_cluster_c.write("\n")
 
 
-    for tag in used_tags.iterkeys():
+    for tag in used_tags.keys():
 
         #print "Doing tag %s..." % (tag)
         tag_stats[tag] = dict(total_size = 0,
@@ -742,10 +739,8 @@ Core time:;%.3f
                 tmp_stat["seq"] = c["cl_stats"]["repseqs"][0][1]
                 tmp_stat["id"] = c["id"]
                 tag_stats[tag]["clusters"].append(tmp_stat)
-        tag_stats[tag]["singletons"] = filter(lambda a: a["global_singleton"] == 1,
-                                              tag_stats[tag]["clusters"])
-        tag_stats[tag]["clusters"] = filter(lambda a: a["global_singleton"] != 1,
-                                            tag_stats[tag]["clusters"])
+        tag_stats[tag]["singletons"] = [a for a in tag_stats[tag]["clusters"] if a["global_singleton"] == 1]
+        tag_stats[tag]["clusters"] = [a for a in tag_stats[tag]["clusters"] if a["global_singleton"] != 1]
         # Sort cluster descending
         tag_stats[tag]["clusters"].sort(None, lambda a: a["cnt"], True)
 
@@ -832,7 +827,7 @@ Core time:;%.3f
     #print tag_stats
 
     if int(settings["graph"]) == 1:
-        print "Creating gv graph files for all clusters."
+        print("Creating gv graph files for all clusters.")
         for c in clusters:
             #print c
             cl_out = open(settings["output_dir"] + "/" + c["id"] + ".gv", "w")
@@ -847,8 +842,8 @@ Core time:;%.3f
                         ref = "\\n" +", ".join(uniseq_to_seq[s]["tags"]["_____ref"])
                     cl_out.write('%s [ label = "%s\\n%d%s" ];\n' % 
                                  (s, s, uniseq_to_seq[s]["count"],ref))
-                my_links = filter(lambda l: l["s1"] in c["set"] or 
-                                  l["s2"] in c["set"], links)
+                my_links = [l for l in links if l["s1"] in c["set"] or 
+                                  l["s2"] in c["set"]]
                 for link in my_links:
                     if link["mode"] == "current":
                         color = "black"

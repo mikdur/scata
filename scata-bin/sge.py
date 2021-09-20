@@ -107,7 +107,7 @@ class SGEJob:
         if len(self.tasks) == 0:
             return
         if self.locked:
-            print "Already started"
+            print("Already started")
             return
         self.locked=True
 
@@ -134,7 +134,7 @@ class SGEJob:
             
             deps = ""
             if len(t["dep"]):
-                deps = ",".join(map(lambda a: self.sge_task_ids[a], t["dep"]))
+                deps = ",".join([self.sge_task_ids[a] for a in t["dep"]])
                 deps = "#$ -hold_jid " + deps
             #print t
             task_script = task_template % ( self.vf,
@@ -154,7 +154,7 @@ class SGEJob:
             os.chmod(self.prefix + "_" + t["id"] + "." + "script.sh", stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR)
             restart_count = 0
             while True:
-		print self.sge_path + "qsub " + self.prefix + "_" + t["id"] + "." + "script.sh"
+		print(self.sge_path + "qsub " + self.prefix + "_" + t["id"] + "." + "script.sh")
                 pipe = subprocess.Popen(self.sge_path + "qsub " + self.prefix + "_" + t["id"] + "." + "script.sh" , 
                                         shell=True, bufsize=1024, 
                                         stdout=subprocess.PIPE).stdout
@@ -170,7 +170,7 @@ class SGEJob:
                 else:
                     if restart_count > 3:
                         raise Exception("Too many restart retries. Cluster down?")
-                    print "Retrying to start job"
+                    print("Retrying to start job")
                     restart_count += 1
                     
         #print self.sge_task_ids, self.tasks
@@ -241,7 +241,7 @@ exit((os.system(t['cmd'] + " '" + "' '".join(t["args"]) + "'") & 0xff00) >> 8)
             else:
                 if restart_count > 3:
                     raise Exception("Too many restart retries. Cluster down?")
-                print "Retrying to start job"
+                print("Retrying to start job")
                 restart_count += 1
                     
         
@@ -282,7 +282,7 @@ exit((os.system(t['cmd'] + " '" + "' '".join(t["args"]) + "'") & 0xff00) >> 8)
                 self.tasks_by_id[job_id]["check"] = self.check_run
                 self.tasks_by_id[job_id]["status"] = e.find("state").text
             
-        for t in filter(lambda a: not a["done"] and a["check"] < self.check_run, self.tasks):
+        for t in [a for a in self.tasks if not a["done"] and a["check"] < self.check_run]:
 
 
             pipe = subprocess.Popen(self.sge_path + "qacct -j " + t["sge_task_id"] + " 2>/dev/null", 
@@ -462,7 +462,7 @@ exit((os.system(t['cmd'] + " '" + "' '".join(t["args"]) + "'") & 0xff00) >> 8)
                     increase_runtime=True
 
         if increase_runtime:
-            print "some tasks need longer runtime, increasing"
+            print("some tasks need longer runtime, increasing")
             self.runtime *= 2
                     
         

@@ -45,8 +45,8 @@ def filter_full(seq_record, qual, min_length, mean_min, min_qual):
             
     seq_list = list(seq_record.seq)
             
-    seq_list = map(lambda b, q: b if q >= min_qual else 'N',
-                   seq_list, qual.quals)
+    seq_list = list(map(lambda b, q: b if q >= min_qual else 'N',
+                   seq_list, qual.quals))
     
     if seq_list.count('N'):
         return [None, "low_min_quality"]
@@ -102,8 +102,7 @@ def filter_hqr(seq_record, qual, min_length, mean_min, min_qual):
             r["length"] = r["end"] - r["start"]
     #print "After:", hqr
 
-    hqr = filter(lambda a: a["length"] >= min_length and a["mean_qual"] >= mean_min,
-                             hqr)
+    hqr = [a for a in hqr if a["length"] >= min_length and a["mean_qual"] >= mean_min]
     
     if not len(hqr):
         return [None, "low_mean_quality"]

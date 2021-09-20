@@ -30,7 +30,7 @@ class Single:
         # Try to open as gzipped file, if that fails, open as plain fasta
         try:
             handle = gzip.open(fastq_file, "r")
-            handle.next() # This fails if not a gzip file, goes into the exception
+            next(handle) # This fails if not a gzip file, goes into the exception
             handle = gzip.open(fastq_file, "r")
             self.fastq = SeqIO.parse(handle, "fastq")
         except IOError:
@@ -41,8 +41,8 @@ class Single:
     def __iter__ (self):
         return self
 
-    def next(self):
-        rec = self.fastq.next()
+    def __next__(self):
+        rec = next(self.fastq)
         q = Qual(rec.id, rec.letter_annotations["phred_quality"])
         rec.letter_annotations=dict()
         return QualSeq([rec, q])
@@ -114,8 +114,8 @@ class FastQPairQualSeq(QualSeq):
             quals = self.s1.letter_annotations["phred_quality"][:run[-1][2]] + \
                 s2_rec.letter_annotations["phred_quality"][run[-1][1][0]:]
         except IndexError:
-            print "IndexError"
-            print run, runs
+            print("IndexError")
+            print(run, runs)
             return None
         self.s=self.s2
         self.s.letter_annotations = dict()
@@ -131,7 +131,7 @@ class Pair:
         self.min = min
         try:
             handle1 = gzip.open(fastq_1, "r")
-            handle1.next() # This fails if not a gzip file, goes into the exception
+            next(handle1) # This fails if not a gzip file, goes into the exception
             handle1 = gzip.open(fastq_1, "r")
             self.fastq1 = SeqIO.parse(handle1, "fastq")
             self.fastq2 = SeqIO.parse(gzip.open(fastq_2, "r"), "fastq")
@@ -144,9 +144,9 @@ class Pair:
     def __iter__ (self):
         return self
 
-    def next(self):
-        s1 = self.fastq1.next()
-        s2 = self.fastq2.next()
+    def __next__(self):
+        s1 = next(self.fastq1)
+        s2 = next(self.fastq2)
 
         return FastQPairQualSeq(s1, s2, self.kmer, self.hsp, self.min)
     

@@ -125,8 +125,8 @@ for dataset in db_c:
     names.append(re.sub("[^-_.,A-Za-z0-9]", "_", dataset["Name"]))
     d_ids.append(str(dataset["idDatasets"]))
 
-d_seq = map(lambda a: "%s/%s.seqs.pick" % (dataset_dir, a), d_ids)
-d_stat = map(lambda a: "%s/%s.stat.pick" % (dataset_dir, a), d_ids)
+d_seq = ["%s/%s.seqs.pick" % (dataset_dir, a) for a in d_ids]
+d_stat = ["%s/%s.stat.pick" % (dataset_dir, a) for a in d_ids]
 
 
 config["454names"] = { "value":  " ".join(names),
@@ -143,7 +143,7 @@ r_ids = [ ]
 for refset in db_c:
     r_ids.append(str(refset["refId"]))
 
-r_fas = map(lambda a: "%s/%s.fas" % (refset_dir, a), r_ids)
+r_fas = ["%s/%s.fas" % (refset_dir, a) for a in r_ids]
 
 
 config["reference_seqs"] = { "value":  " ".join(r_fas)  if len(r_fas) else "none",
@@ -181,7 +181,7 @@ for setting in db_c:
 log_entry("Creating config file")
 config_file = open(run_dir + "/config_%04d.txt" % (jobid),"w")
 
-for option, value in config.iteritems():
+for option, value in config.items():
     config_file.write("# %s\n%s: %s\n\n" % (value["descr"], option, value["value"]))
 config_file.close()
 

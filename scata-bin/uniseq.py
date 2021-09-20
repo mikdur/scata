@@ -1,4 +1,4 @@
-import cPickle, sys
+import pickle, sys
 
 import UserDict
 
@@ -16,16 +16,16 @@ class UniseqDB(UserDict.DictMixin):
 
         if mode == "w":
             try:
-                self.parts = cPickle.load(open(self.basename + "_parts.pick"))
+                self.parts = pickle.load(open(self.basename + "_parts.pick"))
             except IOError:
                 pass
         else:
-            self.parts = cPickle.load(open(self.basename + "_parts.pick"))
+            self.parts = pickle.load(open(self.basename + "_parts.pick"))
 
 
     def keys(self):
         if not self.key_list:
-            self.key_list = self.parts.keys()
+            self.key_list = list(self.parts.keys())
         return self.key_list
 
     def __len__(self):
@@ -50,7 +50,7 @@ class UniseqDB(UserDict.DictMixin):
                 raise KeyError("UniseqDB: key %s not found" % (repr(key)))
             sys.stdout.write("UniseqDB: loading parition %s\n" % ( repr(self.parts[key])))
 	    sys.stdout.flush()
-            self.cache[self.parts[key]] = cPickle.load(open(self.basename + "_" + str(self.parts[key]) + ".pick"))
+            self.cache[self.parts[key]] = pickle.load(open(self.basename + "_" + str(self.parts[key]) + ".pick"))
             value = self.cache[self.parts[key]][key]
         return value
 
@@ -90,8 +90,8 @@ class UniseqDB(UserDict.DictMixin):
         sys.stdout.write("UniseqDB: syncing %d partitions\n" % (len(self.cache)))
 	sys.stdout.flush()
         for part in self.cache:
-            cPickle.dump(self.cache[part], open(self.basename + "_" + str(part) + ".pick","wct"))
-        cPickle.dump(self.parts, open(self.basename + "_" + "parts.pick", "wct"))
+            pickle.dump(self.cache[part], open(self.basename + "_" + str(part) + ".pick","wct"))
+        pickle.dump(self.parts, open(self.basename + "_" + "parts.pick", "wct"))
         self.synced = True
                    
     

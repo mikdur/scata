@@ -5,8 +5,8 @@ import constants, uniseq
 import sys, os, pickle
 
 
-print os.uname()
-print sys.argv
+print(os.uname())
+print(sys.argv)
 
 
 
@@ -17,13 +17,13 @@ outfile = sys.argv[2]
 
 uniseq_to_seq = uniseq.UniseqDB(settings["work_dir"] + "/uniseq_to_seq.pick", "r")
 
-print "Merging clusters..."
+print("Merging clusters...")
 
 clusters = [ ]
 
 
 for file in sys.argv[3:]:
-    print "reading cluster", file
+    print("reading cluster", file)
     subcluster = pickle.load(open(file))
     clusters += subcluster
 
@@ -31,14 +31,14 @@ for file in sys.argv[3:]:
 # Collaps clusters to non-redundant clusters
 
 
-print "Number of clusters: ", len(clusters)
+print("Number of clusters: ", len(clusters))
 collapsed_clusters = [ ]
 
 
 while True:
     clusters.sort(lambda a, b: cmp(len(a), len(b)))
     
-    print "next", len(clusters), len(collapsed_clusters)
+    print("next", len(clusters), len(collapsed_clusters))
     if len(clusters) == 0:
         break
     c = clusters.pop()
@@ -75,12 +75,12 @@ while True:
 
         if len(to_del) == 0:
             collapsed_clusters.append(c)
-            print "Final size", len(c)
+            print("Final size", len(c))
             break
-    print "repeating"
+    print("repeating")
 
-print "done"
+print("done")
 
-print "outfile is", outfile
+print("outfile is", outfile)
 
 pickle.dump(collapsed_clusters,open(outfile,"w"))
