@@ -59,10 +59,8 @@ formatdb_cmd=subprocess.Popen("which " + settings["formatdb"],shell=True,stdout=
 call([formatdb_cmd, "-p", "F", "-i", db])
 blastall_cmd=subprocess.Popen("which " + settings["blastall"],shell=True,stdout=subprocess.PIPE).stdout.next()[:-1]
 
-res_h, err_h = NCBIStandalone.blastall(blastall_cmd, "blastn",
-                                       db, fas, nprocessors=1,
-                                       alignments=500000, 
-                                       expectation=settings["blast_expect"])
+res_h = subprocess.Popen([ blastall_cmd, '-p', 'blastn', '-d', db, '-i', fas, '-m', '7',
+                           '-a', '1', '-e', settings["blast_expect"], '-b', '500000' ], stdout=subprocess.PIPE).stdout
 
 clusters = { }
 cluster_links = list()
