@@ -163,10 +163,10 @@ def run_scata(config_file,pr=None):
     print("Total number of genotypes in analysis: ", len(list(seqs.keys())))
 
     if len(list(seqs.keys())) == 0:
-	ut = open(settings["output_dir"] + "/no_sequences_to_cluster.txt", "wct")
-	ut.write("Cowardly refusing to cluster 0 sequences!")
-	ut.close()
-	return
+        ut = open(settings["output_dir"] + "/no_sequences_to_cluster.txt", "wct")
+        ut.write("Cowardly refusing to cluster 0 sequences!")
+        ut.close()
+        return
 
 
     # Collapse homopolymers if requested, otherwise just create data structure.
@@ -477,8 +477,8 @@ def run_scata(config_file,pr=None):
             print("Retrying")
 
     if pr:
-    	pr.set_msg("Done.")
-	pr.update_state(1,1)
+        pr.set_msg("Done.")
+        pr.update_state(1,1)
 
     # Count singletons
 
@@ -686,11 +686,11 @@ Core time:;%.3f
         ali_fas.close()
     print("Dumping cluster reference alignments")
     for c in [c for c in clusters if c["cl_stats"]["total_size"] > 1]:
-	if "repseq_alist" in c["cl_stats"]:
-	        ali_fas = open(settings["output_dir"] + "/repseq_alignments/" + c["id"] + ".fas","w")
-                for rseq in c["cl_stats"]["repseq_alist"]:
-                    ali_fas.write(">" + rseq["id"] + "\n" + rseq["seq"] + "\n")
-        	ali_fas.close()
+        if "repseq_alist" in c["cl_stats"]:
+            ali_fas = open(settings["output_dir"] + "/repseq_alignments/" + c["id"] + ".fas","w")
+            for rseq in c["cl_stats"]["repseq_alist"]:
+                ali_fas.write(">" + rseq["id"] + "\n" + rseq["seq"] + "\n")
+            ali_fas.close()
 
     print("Summarising results per tag")
     tag_stats = { }

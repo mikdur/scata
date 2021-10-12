@@ -83,7 +83,7 @@ for blast_record in blast_records:
     for ali in blast_record.alignments:
 
         for hsp in ali.hsps:
-	    analysed_hsps += 1
+            analysed_hsps += 1
 
             query = str(blast_record.query)
             hit = str(ali.hit_def)

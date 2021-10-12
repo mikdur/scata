@@ -49,7 +49,7 @@ class UniseqDB(UserDict.DictMixin):
             if key not in self.parts:
                 raise KeyError("UniseqDB: key %s not found" % (repr(key)))
             sys.stdout.write("UniseqDB: loading parition %s\n" % ( repr(self.parts[key])))
-	    sys.stdout.flush()
+            sys.stdout.flush()
             self.cache[self.parts[key]] = pickle.load(open(self.basename + "_" + str(self.parts[key]) + ".pick"))
             value = self.cache[self.parts[key]][key]
         return value
@@ -88,7 +88,7 @@ class UniseqDB(UserDict.DictMixin):
         if self.mode != "w":
             raise Exception("Will not sync a readonly db")
         sys.stdout.write("UniseqDB: syncing %d partitions\n" % (len(self.cache)))
-	sys.stdout.flush()
+        sys.stdout.flush()
         for part in self.cache:
             pickle.dump(self.cache[part], open(self.basename + "_" + str(part) + ".pick","wct"))
         pickle.dump(self.parts, open(self.basename + "_" + "parts.pick", "wct"))

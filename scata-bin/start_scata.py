@@ -37,11 +37,11 @@ class MySQLPrinter:
         sys.stdout.flush()
         db = MySQLdb.connect( host=db_host, user=db_user, passwd=db_pass, db=db_db)
         db_c = db.cursor(MySQLdb.cursors.DictCursor)
-	db_c.execute("SELECT * from Jobs WHERE idJobs = %s", (jobid,))
-	row = db_c.fetchone()
-	if not row:
-	    sys.stdout.write("Job gone, exiting")
-	    exit(0)
+        db_c.execute("SELECT * from Jobs WHERE idJobs = %s", (jobid,))
+        row = db_c.fetchone()
+        if not row:
+            sys.stdout.write("Job gone, exiting")
+            exit(0)
         db_c.execute("UPDATE Jobs SET description=%s WHERE idJobs = %s", (msg,jobid,))
         db.commit()
 

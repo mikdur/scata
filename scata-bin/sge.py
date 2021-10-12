@@ -154,7 +154,7 @@ class SGEJob:
             os.chmod(self.prefix + "_" + t["id"] + "." + "script.sh", stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR)
             restart_count = 0
             while True:
-		print(self.sge_path + "qsub " + self.prefix + "_" + t["id"] + "." + "script.sh")
+                print(self.sge_path + "qsub " + self.prefix + "_" + t["id"] + "." + "script.sh")
                 pipe = subprocess.Popen(self.sge_path + "qsub " + self.prefix + "_" + t["id"] + "." + "script.sh" , 
                                         shell=True, bufsize=1024, 
                                         stdout=subprocess.PIPE).stdout
@@ -192,7 +192,7 @@ tasks = pickle.load(open('%s'))
 t=tasks[sys.argv[1]]
 
 if t['done']:
-	exit(0)
+    exit(0)
         
 print 'About to run: ' +t['cmd'] + " '" + "' '".join(t["args"]) + "'"
 sys.stdout.flush()

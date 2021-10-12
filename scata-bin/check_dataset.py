@@ -252,8 +252,8 @@ def master_loop(argv, mpi_checker):
 
 
     except:
-	if mpi_checker:
-		mpi_checker.end_workers()
+        if mpi_checker:
+            mpi_checker.end_workers()
         exceptionType, exceptionValue, exceptionTraceback = sys.exc_info()
         exception_text = "".join(traceback.format_exception(exceptionType, exceptionValue,
                                     exceptionTraceback))
