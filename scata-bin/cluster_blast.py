@@ -107,6 +107,8 @@ for blast_record in blast_records:
                 if len(uniseq_to_seq[query]["seq"]) == long_len  and uniseq_to_seq[query]["count"] > 0:
                     if (float(hsp.query_end) - float(hsp.query_start)) / len(uniseq_to_seq[query]["seq"]) < \
                        float(settings["min_alignment"]): continue
+                elif uniseq_to_seq[hit]["count"] == 0:
+                    continue
                 else:
                     if (float(hsp.sbjct_end) - float( hsp.sbjct_start)) / len(uniseq_to_seq[hit]["seq"]) < \
                        float(settings["min_alignment"]): continue
