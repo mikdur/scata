@@ -67,9 +67,9 @@ for seq_record in refs:
 #except:
 #    errors += "Parse error, is it really a FASTA file?\n"
 
-print errors
-print "----"
-print warnings
+print(errors)
+print("----")
+print(warnings)
 
 
-print ref_count, mean_len, max_len
+print(ref_count, mean_len, max_len)

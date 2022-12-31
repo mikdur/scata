@@ -1,29 +1,29 @@
 #!/usr/bin/env python
 
 import constants, uniseq
-import sys, os, re, cPickle, subprocess, time
+import sys, os, re, pickle, subprocess, time
 
 
-print os.uname()
-print sys.argv
+print(os.uname())
+print(sys.argv)
 
 
 from subprocess import call
 
-settings = cPickle.load(open(sys.argv[1] + "/settings.pick"))
+settings = pickle.load(open(sys.argv[1] + "/settings.pick"))
 
 tmp = os.getenv("TMPDIR")
 
 if tmp == None:
     tmp = settings["work_dir"]
 
-print "Temporary files go in ", tmp
+print("Temporary files go in ", tmp)
 
 
 
 
 uniseq_to_seq = uniseq.UniseqDB(settings["work_dir"] + "/uniseq_to_seq.pick", "r")
-seqs = cPickle.load(open(settings["work_dir"] + "/seqs.pick"))
+seqs = pickle.load(open(settings["work_dir"] + "/seqs.pick"))
 
 num1 = int(sys.argv[2])
 num2 = int(sys.argv[3])
@@ -38,14 +38,14 @@ pick_file = settings["work_dir"] + "/" + prefix
 db = tmp + "/" + os.path.basename(prefix) + ".db.fas"
 fas = tmp + "/" + os.path.basename(prefix)
 
-print num1, num2, step
-print fas
-print db
-print pick_file
+print(num1, num2, step)
+print(fas)
+print(db)
+print(pick_file)
 
 dbfile=open(db,"wct")
 fasfile=open(fas,"wct")
-print time.ctime()
+print(time.ctime())
 for id in ids:
     fasfile.write(">" + id + "\n" + uniseq_to_seq[id]["seq"] + "\n" )
 for id in dbids:
@@ -53,9 +53,9 @@ for id in dbids:
 fasfile.close()
 dbfile.close()
 
-print time.ctime()
+print(time.ctime())
 
-used_ids = dict(map(lambda a: (a,0), ids))
+used_ids = dict([(a,0) for a in ids])
 
 usearch_cmd=subprocess.Popen("which " + settings["usearch"],shell=True,stdout=subprocess.PIPE).stdout.next()[:-1]
 call([usearch_cmd,
@@ -93,7 +93,7 @@ for line in res:
         col_names = line[:-1].split()
         continue
 
-    hit = dict(zip(col_names, line[:-1].split()))
+    hit = dict(list(zip(col_names, line[:-1].split())))
     #print col_names,hit    
 
     query = hit["query"]
@@ -184,7 +184,7 @@ for line in res:
                 #print "No join on refs"
                 if not target_is_ref_only and query_is_ref_only:
                     if target_is_ref_only:
-                        print "ensuring reference target is in both clusters"
+                        print("ensuring reference target is in both clusters")
                         if target not in c1:
                             c1.add(target)
                         if target not in c2:
@@ -209,7 +209,7 @@ for line in res:
     elif target in clusters:
         #print "target"
         if target_is_ref_only:
-            print "target is only ref, will not pull in query"
+            print("target is only ref, will not pull in query")
         else:
             clusters[target].add(query)
             clusters[query] = clusters[target]
@@ -221,7 +221,7 @@ for line in res:
     elif query in clusters:
         #print "query"
         if query_is_ref_only:
-            print "query is only ref, will not pull in target"
+            print("query is only ref, will not pull in target")
         else:
             clusters[query].add(target)
             clusters[target] = clusters[query]
@@ -241,13 +241,13 @@ for line in res:
 
 
     
-print "Merging clusters..."
+print("Merging clusters...")
 
 
 
 sc = [ ]
 
-for c in clusters.values():
+for c in list(clusters.values()):
     tt = set()
     for t in sc:
         tt=t
@@ -262,7 +262,7 @@ for c in clusters.values():
 
 to_del = []
 for i,c in enumerate(sc):
-    if sum(map(lambda a: uniseq_to_seq[a]["count"], c)) < 1:
+    if sum([uniseq_to_seq[a]["count"] for a in c]) < 1:
         to_del.append(i)
 to_del.reverse()
 #print to_del
@@ -271,7 +271,7 @@ for d in to_del:
 
     
 singletons = [ ]
-for id,used in used_ids.iteritems():
+for id,used in used_ids.items():
     if used == 0:
         if uniseq_to_seq[id]["count"] != 0:
             singletons.append(set([id]))
@@ -282,11 +282,11 @@ for id,used in used_ids.iteritems():
 sc += singletons
 
 
-cPickle.dump(sc,open(pick_file + ".pick","w"))
+pickle.dump(sc,open(pick_file + ".pick","w"))
 if int(settings["graph"]) == 1:
-    cPickle.dump(cluster_links,open(pick_file + ".links","w"))
+    pickle.dump(cluster_links,open(pick_file + ".links","w"))
 
-print "Analysed HSPs:", analysed_hsps, hit_hsps
+print("Analysed HSPs:", analysed_hsps, hit_hsps)
 #os.remove(db)
 #os.remove(fas + ".out")
 #os.remove(fas)

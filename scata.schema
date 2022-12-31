@@ -1,0 +1,289 @@
+--
+-- Table structure for table `Datasets`
+--
+
+CREATE TABLE `Datasets` (
+  `idDatasets` int(11) NOT NULL AUTO_INCREMENT,
+  `createdDate` datetime DEFAULT NULL,
+  `owner` int(11) DEFAULT NULL,
+  `Name` varchar(45) DEFAULT NULL,
+  `Description` text DEFAULT NULL,
+  `fasFile` varchar(127) DEFAULT NULL,
+  `qualFile` varchar(127) DEFAULT NULL,
+  `ready` tinyint(1) DEFAULT 0,
+  `Primer5` text DEFAULT NULL,
+  `Primer3` text DEFAULT NULL,
+  `Primer5score` float DEFAULT NULL,
+  `Primer3score` float DEFAULT NULL,
+  `Tagset5` int(11) DEFAULT NULL,
+  `Tagset3` int(11) DEFAULT NULL,
+  `min_len` int(11) DEFAULT NULL,
+  `max_len` int(11) DEFAULT NULL,
+  `mean_qual` int(11) DEFAULT NULL,
+  `min_qual` int(11) DEFAULT NULL,
+  `locked` tinyint(1) DEFAULT 0,
+  `raw_filtering` tinyint(1) DEFAULT 0,
+  `file_type` varchar(32) DEFAULT 'fasta',
+  `overlap_kmer` int(11) DEFAULT NULL,
+  `overlap_hsp` int(11) DEFAULT NULL,
+  `overlap_min` int(11) DEFAULT NULL,
+  `file1` int(11) DEFAULT NULL,
+  `file2` int(11) DEFAULT NULL,
+  PRIMARY KEY (`idDatasets`),
+  KEY `dsownerFK` (`owner`),
+  CONSTRAINT `dsownerFK` FOREIGN KEY (`owner`) REFERENCES `Users` (`idUsers`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=9053 DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `Files`
+--
+
+CREATE TABLE `Files` (
+  `idFiles` int(11) NOT NULL AUTO_INCREMENT,
+  `createTime` datetime DEFAULT NULL,
+  `owner` int(11) DEFAULT NULL,
+  `name` varchar(512) DEFAULT NULL,
+  PRIMARY KEY (`idFiles`)
+) ENGINE=InnoDB AUTO_INCREMENT=8123 DEFAULT CHARSET=latin1;
+
+
+--
+-- Table structure for table `JobDatasets`
+--
+
+CREATE TABLE `JobDatasets` (
+  `idJobDatset` int(11) NOT NULL AUTO_INCREMENT,
+  `jobId` int(11) DEFAULT NULL,
+  `dataSetId` int(11) DEFAULT NULL,
+  PRIMARY KEY (`idJobDatset`),
+  KEY `jsjobFK` (`jobId`),
+  KEY `jsDatasetFL` (`dataSetId`),
+  CONSTRAINT `JobDatasets_ibfk_1` FOREIGN KEY (`jobId`) REFERENCES `Jobs` (`idJobs`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `jsDatasetFL` FOREIGN KEY (`dataSetId`) REFERENCES `Datasets` (`idDatasets`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB AUTO_INCREMENT=14276 DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `JobRefs`
+--
+
+CREATE TABLE `JobRefs` (
+  `idJobRef` int(11) NOT NULL AUTO_INCREMENT,
+  `refId` int(11) DEFAULT NULL COMMENT '	',
+  `jobId` int(11) DEFAULT NULL,
+  PRIMARY KEY (`idJobRef`),
+  KEY `jrjobFK` (`jobId`),
+  KEY `jrrefFK` (`refId`),
+  CONSTRAINT `jrjobFK` FOREIGN KEY (`jobId`) REFERENCES `Jobs` (`idJobs`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `jrrefFK` FOREIGN KEY (`refId`) REFERENCES `ReferenceSets` (`idReferenceSet`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=19356 DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `JobStatus`
+--
+
+CREATE TABLE `JobStatus` (
+  `idJobStatus` int(11) NOT NULL,
+  `Status` varchar(45) DEFAULT NULL,
+  PRIMARY KEY (`idJobStatus`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `JobStatus`
+--
+
+LOCK TABLES `JobStatus` WRITE;
+/*!40000 ALTER TABLE `JobStatus` DISABLE KEYS */;
+INSERT INTO `JobStatus` VALUES (1,'Pending'),(2,'Running'),(3,'Success'),(4,'Failed');
+/*!40000 ALTER TABLE `JobStatus` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `Jobs`
+--
+
+CREATE TABLE `Jobs` (
+  `idJobs` int(11) NOT NULL AUTO_INCREMENT,
+  `createTime` datetime DEFAULT NULL,
+  `owner` int(11) DEFAULT NULL,
+  `startTime` datetime DEFAULT NULL,
+  `endTime` datetime DEFAULT NULL,
+  `status` int(11) DEFAULT 0,
+  `tagSet` int(11) DEFAULT NULL,
+  `jobSettingsSet` int(11) DEFAULT NULL,
+  `name` varchar(45) DEFAULT NULL,
+  `filename` varchar(32) DEFAULT NULL,
+  `description` blob DEFAULT NULL,
+  `locked` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`idJobs`),
+  KEY `jownerFK` (`owner`),
+  KEY `jtagsetFK` (`tagSet`),
+  KEY `jsettingsFK` (`jobSettingsSet`),
+  KEY `jstatusFK` (`status`),
+  CONSTRAINT `jownerFK` FOREIGN KEY (`owner`) REFERENCES `Users` (`idUsers`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `jsettingsFK` FOREIGN KEY (`jobSettingsSet`) REFERENCES `ParameterSets` (`idSettingsSet`) ON DELETE SET NULL ON UPDATE SET NULL,
+  CONSTRAINT `jstatusFK` FOREIGN KEY (`status`) REFERENCES `JobStatus` (`idJobStatus`) ON DELETE SET NULL ON UPDATE NO ACTION,
+  CONSTRAINT `jtagsetFK` FOREIGN KEY (`tagSet`) REFERENCES `TagSets` (`idTagSets`) ON DELETE SET NULL ON UPDATE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=5410 DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `ParameterSets`
+--
+
+CREATE TABLE `ParameterSets` (
+  `idSettingsSet` int(11) NOT NULL AUTO_INCREMENT,
+  `createTime` datetime DEFAULT NULL COMMENT '	',
+  `owner` int(11) DEFAULT NULL,
+  `Name` varchar(45) DEFAULT NULL,
+  `Description` blob DEFAULT NULL,
+  PRIMARY KEY (`idSettingsSet`),
+  KEY `ssownerFK` (`owner`),
+  CONSTRAINT `ssownerFK` FOREIGN KEY (`owner`) REFERENCES `Users` (`idUsers`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=1730 DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `ParameterSettoValue`
+--
+
+CREATE TABLE `ParameterSettoValue` (
+  `idSSV` int(11) NOT NULL AUTO_INCREMENT,
+  `parameterSetId` int(11) DEFAULT NULL,
+  `parameterValueId` int(11) DEFAULT NULL,
+  `textValue` varchar(45) DEFAULT NULL,
+  PRIMARY KEY (`idSSV`),
+  KEY `ssFK` (`parameterSetId`),
+  KEY `ssvalueFK` (`parameterValueId`),
+  CONSTRAINT `ssFK` FOREIGN KEY (`parameterSetId`) REFERENCES `ParameterSets` (`idSettingsSet`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `ssvalueFK` FOREIGN KEY (`parameterValueId`) REFERENCES `ParameterValue` (`idValue`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=26441 DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `ParameterValue`
+--
+
+CREATE TABLE `ParameterValue` (
+  `idValue` int(11) NOT NULL AUTO_INCREMENT,
+  `parameterId` int(11) DEFAULT NULL,
+  `value` varchar(45) DEFAULT NULL,
+  `displayValue` varchar(45) DEFAULT NULL,
+  `isDefault` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`idValue`),
+  KEY `svsettingFK` (`parameterId`),
+  CONSTRAINT `svsettingFK` FOREIGN KEY (`parameterId`) REFERENCES `Parameters` (`idParameter`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `ParameterValue`
+--
+
+LOCK TABLES `ParameterValue` WRITE;
+/*!40000 ALTER TABLE `ParameterValue` DISABLE KEYS */;
+INSERT INTO `ParameterValue` VALUES (7,4,'100','100',0),(8,4,'1000','1000',0),(9,4,'10000','10000',0),(10,4,'10000000','Unlimited',1),(11,4,'16380','16380 (Max for Excel)',0),(23,11,'0.015','0.015',1),(24,12,'0.85','0.85',1),(25,13,'1e-60','1e-60 (default)',1),(26,13,'1e-40','1e-40',0),(28,14,'1','1',1),(29,15,'0','0',1),(30,16,'1','1',1),(31,17,'0.0','0.0',1),(40,13,'1e-80','1e-80',0),(42,26,'blast','BLAST',0),(43,26,'usearch','USearch',1),(44,27,'3','3',1),(45,28,'3','3',1),(46,29,'0','0',1),(47,26,'vsearch','VSEARCH',0),(49,30,'0','0',1);
+/*!40000 ALTER TABLE `ParameterValue` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `Parameters`
+--
+
+CREATE TABLE `Parameters` (
+  `idParameter` int(11) NOT NULL AUTO_INCREMENT,
+  `createTime` datetime DEFAULT NULL COMMENT '	',
+  `keyword` varchar(45) DEFAULT NULL,
+  `Name` varchar(45) DEFAULT NULL,
+  `Description` blob DEFAULT NULL,
+  `type` enum('text','select') DEFAULT NULL,
+  `available` tinyint(1) DEFAULT NULL,
+  `coerce` varchar(10) DEFAULT NULL,
+  `parameter_order` int(11) DEFAULT 1000,
+  PRIMARY KEY (`idParameter`)
+) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `Parameters`
+--
+
+LOCK TABLES `Parameters` WRITE;
+/*!40000 ALTER TABLE `Parameters` DISABLE KEYS */;
+INSERT INTO `Parameters` VALUES (4,'2010-03-01 18:28:55','tag_by_cluster_max','Tag-by-Cluster Max','Maximum number of sequences to include in the tag-by-cluster data matrix of relative cluster abundance.','select',1,NULL,200),(11,'2010-03-02 13:41:44','max_dist','Clustering distance','Thershold distance for where clustering should occur. Any sequence which is less than this divergent from some other sequence will be added to the cluster. Divergence is calculated based on pairwise alignments with minimum length according to the option set below.','text',1,'float',100),(12,'2010-03-02 14:00:06','min_alignment','Minimum alignment to consider clustering','Minimum length of pairwise alignment in the clustering process required to consider a sequence pair for clustering. It is recommended to keep this value close to the minimum read length requirement to avoid over-clustering on conserved motif within the sequences. The value can be either an absolute value in basepairs, or a value between 0 and 1 giving the proportion of the longest sequence in a sequence pair that is included in the alignment.','text',1,'float',110),(13,'2010-03-02 14:39:08','blast_expect','Blast E-value cutoff','E-value filter on BLAST hits in the clustering process. Leave this at the default unless you increase the clustering threshold to several per cent. Higher values will only waste cpu resources and running time. Please check the e_values.txt by plotting e_value against distance file if you suspect that the clustering is truncated due to too stringent e-value filtering. (Applies only to BLAST clustering)','select',1,NULL,210),(14,'2010-03-03 11:00:06','missmatch_pen','Missmatch penalty','Missmatch penalty to use in hit scoring during clustering.','text',1,'float',120),(15,'2010-03-03 11:00:39','gap_open_pen','Gap open penalty','Gap extension open penalty to use in hit scoring during clustering.','text',1,'float',130),(16,'2010-03-03 11:01:03','gap_extend_pen','Gap extension penalty','Gap extension penalty to use in hit scoring during clustering.','text',1,'float',140),(17,'2010-03-03 11:02:12','end_gap_weight','End gap weight','Weighting of end gaps (open and extension) to use in hit scoring during clustering.','text',1,'float',150),(26,NULL,'cluster_engine','Cluster engine','What cluster engine to use. Please stick to default','select',1,NULL,300),(27,'2011-03-14 14:59:20','max_homopolymer','Collapse homopolymers','Collapse homopolymers longer than the given length before clustering. A value of 0 will turn this function off','text',1,'int',170),(28,'2011-03-14 15:49:35','num_repseqs','Number of repseqs to report','Report at most this number of representative sequences in summary tables','text',1,'int',300),(29,'2014-11-07 00:45:18','downsample_size','Downsample sample size','If this value is grater than 0, sequences for any sample/tag with more than this many sequences will be randomly downsampled to the given size','text',1,'int',180),(30,NULL,'remove_lowfreq','Remove low frequency genotypes','Remove genotypes from the combined dataset that occurs this many times or less.','text',1,'int',185);
+/*!40000 ALTER TABLE `Parameters` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `ReferenceSets`
+--
+
+CREATE TABLE `ReferenceSets` (
+  `idReferenceSet` int(11) NOT NULL AUTO_INCREMENT,
+  `createTime` datetime DEFAULT NULL,
+  `owner` int(11) DEFAULT NULL,
+  `Name` varchar(45) DEFAULT NULL,
+  `Description` blob DEFAULT NULL,
+  `isPublic` tinyint(1) DEFAULT 0,
+  `fileName` varchar(45) DEFAULT NULL,
+  `ready` tinyint(1) DEFAULT 0,
+  `CutSequence` blob DEFAULT NULL,
+  `CutLength` int(11) DEFAULT 0,
+  `locked` tinyint(1) DEFAULT 0,
+  PRIMARY KEY (`idReferenceSet`),
+  KEY `rsownerFK` (`owner`),
+  CONSTRAINT `rsownerFK` FOREIGN KEY (`owner`) REFERENCES `Users` (`idUsers`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB AUTO_INCREMENT=666 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `TagSets`
+--
+
+CREATE TABLE `TagSets` (
+  `idTagSets` int(11) NOT NULL AUTO_INCREMENT COMMENT '	',
+  `createTime` datetime DEFAULT NULL,
+  `owner` int(11) DEFAULT NULL,
+  `tagSetName` varchar(45) DEFAULT NULL,
+  `tagSetFile` varchar(127) DEFAULT NULL,
+  `ready` tinyint(1) DEFAULT 0,
+  `locked` tinyint(1) DEFAULT 0,
+  PRIMARY KEY (`idTagSets`),
+  KEY `FKtagSetOwner` (`owner`),
+  CONSTRAINT `FKtagSetOwner` FOREIGN KEY (`owner`) REFERENCES `Users` (`idUsers`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=1636 DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `Users`
+--
+
+CREATE TABLE `Users` (
+  `idUsers` int(11) NOT NULL AUTO_INCREMENT,
+  `Email` varchar(255) DEFAULT NULL,
+  `Password` varchar(255) DEFAULT NULL,
+  `Modified` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `Created` datetime DEFAULT NULL,
+  `Enabled` tinyint(1) DEFAULT NULL,
+  `isAdmin` tinyint(1) NOT NULL DEFAULT 0,
+  `sgeProject` varchar(100) DEFAULT 'mykopat-scata',
+  PRIMARY KEY (`idUsers`)
+) ENGINE=InnoDB AUTO_INCREMENT=651 DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `Users`
+--
+
+LOCK TABLES `Users` WRITE;
+/*!40000 ALTER TABLE `Users` DISABLE KEYS */;
+INSERT INTO `Users` VALUES (5,'admin@admin.domain','292f13c7970d73b0870043cf960106d8','2012-03-22 15:57:36','2010-02-22 05:46:49',1,0,'mykopat-scata');
+/*!40000 ALTER TABLE `Users` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `UsersNewPassword`
+--
+
+CREATE TABLE `UsersNewPassword` (
+  `idNewPassword` int(11) NOT NULL AUTO_INCREMENT,
+  `user` int(11) NOT NULL,
+  `requested` timestamp NOT NULL DEFAULT current_timestamp(),
+  `verificationCode` varchar(32) DEFAULT NULL,
+  PRIMARY KEY (`idNewPassword`),
+  KEY `user` (`user`)
+) ENGINE=InnoDB AUTO_INCREMENT=58 DEFAULT CHARSET=latin1;
+
+

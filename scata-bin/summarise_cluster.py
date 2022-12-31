@@ -1,24 +1,25 @@
 #!/usr/bin/env python
 
 import constants, uniseq
-import sys, os, re, cPickle
+import sys, os, re, pickle
 from Bio import AlignIO
 from subprocess import call
+from functools import reduce
 
 
 
-print "Workdir:", os.getcwd()
-print "uname:", " ".join(os.uname())
+print("Workdir:", os.getcwd())
+print("uname:", " ".join(os.uname()))
 
 
-settings = cPickle.load(open(sys.argv[1] + "/settings.pick"))
+settings = pickle.load(open(sys.argv[1] + "/settings.pick"))
 
 tmp_dir = None # os.getenv("TMPDIR")
 
 if tmp_dir == None:
     tmp_dir = settings["work_dir"]
 
-print "Temporary files go in ", tmp_dir
+print("Temporary files go in ", tmp_dir)
 
 sys.stdout.flush()
 
@@ -27,12 +28,12 @@ sys.stdout.flush()
 
 
 
-clusters = cPickle.load(open(settings["work_dir"] + "/clusters.pick"))
+clusters = pickle.load(open(settings["work_dir"] + "/clusters.pick"))
 
 uniseq_to_seq = uniseq.UniseqDB(settings["work_dir"] + "/uniseq_to_seq.pick", "r")
 
 for cl_id in sys.argv[2:]:
-    print "Cluster id", cl_id
+    print("Cluster id", cl_id)
 
     cluster = clusters[int(cl_id)]
 
@@ -59,7 +60,7 @@ for cl_id in sys.argv[2:]:
                 reference_seqs.append({"name" : uniseq_to_seq[uniseq]["seqs"][subseq]["tags"]["_____ref"],
                                        "uniseq" : uniseq,
                                        "subseq" : subseq })
-            if not (len(uniseq_to_seq[uniseq]["seqs"][subseq]["tags"].keys()) == 1 and \
+            if not (len(list(uniseq_to_seq[uniseq]["seqs"][subseq]["tags"].keys())) == 1 and \
                     "_____ref" in uniseq_to_seq[uniseq]["seqs"][subseq]["tags"]):
                 genotypes += 1
             if uniseq_to_seq[uniseq]["seqs"][subseq]["count"] == 1:
@@ -81,7 +82,7 @@ for cl_id in sys.argv[2:]:
     # Derive the most common genotypes
     seqs = [ ]
     for uniseq in cluster["set"]:
-        for subseq in uniseq_to_seq[uniseq]["seqs"].keys():
+        for subseq in list(uniseq_to_seq[uniseq]["seqs"].keys()):
             seqs.append([uniseq, subseq, uniseq_to_seq[uniseq]["seqs"][subseq]["count"]])
 
 
@@ -95,7 +96,7 @@ for cl_id in sys.argv[2:]:
 
 
 
-    print "Aligning references and repseqs"
+    print("Aligning references and repseqs")
     fas_out = open(tmp_dir + "/repseqs" + cl_id + ".fas", "w")
 
     cnt_rep = 0
@@ -127,14 +128,13 @@ for cl_id in sys.argv[2:]:
                                       cl_id + ".fas.aln"), "fasta")
 
     
-        repseq_alist = map(lambda a: dict(seq=str(a.seq).upper(), 
-                                          id=a.description),
-                           list(alignment))
+        repseq_alist = [dict(seq=str(a.seq).upper(), 
+                                          id=a.description) for a in list(alignment)]
     else:
-        print "Empty alignment"
+        print("Empty alignment")
     
     # Flatten reference sequence list
-    ref_list = map(lambda a: a["name"], reference_seqs)
+    ref_list = [a["name"] for a in reference_seqs]
 
     if len(ref_list) > 0:
         ref_list = reduce(lambda a, b: a+b, ref_list)
@@ -152,10 +152,10 @@ for cl_id in sys.argv[2:]:
                    genotypes = genotypes)
 
     
-    cPickle.dump(result,open(settings["work_dir"] + "/cluster" + cl_id + ".pick",
+    pickle.dump(result,open(settings["work_dir"] + "/cluster" + cl_id + ".pick",
                         "w"))
 
-    print "Cluster id", cl_id, "done"
+    print("Cluster id", cl_id, "done")
 
 
 

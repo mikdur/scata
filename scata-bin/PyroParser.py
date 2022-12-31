@@ -19,12 +19,12 @@ class QualFile:
     def __init__ (self, qualfile):
         self.qualfile = qualfile
         try:
-            self.line = qualfile.next()
+            self.line = next(qualfile)
         except StopIteration:
             raise Exception("Format error in qualfile")
         self.eof=0
 
-    def next(self):
+    def __next__(self):
         if self.eof == 1:
             raise StopIteration
 
@@ -37,7 +37,7 @@ class QualFile:
         
         while True:
             try:
-                self.line = self.qualfile.next()
+                self.line = next(self.qualfile)
                 
                 if self.line[0] == ">":
                     return Qual(seq_name, quals)
@@ -56,7 +56,7 @@ class RawPyroRes:
                 qual = open(qual_file)
                 self.qual = QualFile(qual)
             except IOError:
-                print "no qual"
+                print("no qual")
                 self.qual_present = False
         else:
             self.qual_present = False
@@ -65,11 +65,11 @@ class RawPyroRes:
     def __iter__ (self):
         return self
 
-    def next(self):
-        r = [self.fasta.next(), None]
+    def __next__(self):
+        r = [next(self.fasta), None]
         seq_record = r[0]
         if self.qual_present:
-            qual = self.qual.next()
+            qual = next(self.qual)
             if seq_record.id != qual.name:
                 raise Exception("Fasta and Qual ID missmatch")
 
@@ -103,9 +103,9 @@ class PyroRes:
     def __iter__ (self):
         return self
 
-    def next (self):
+    def __next__ (self):
         while True:
-            rpr_rec = self.rpr.next()
+            rpr_rec = next(self.rpr)
             seq_record = rpr_rec[0]
             
             self.stats["count"] += 1

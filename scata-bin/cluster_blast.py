@@ -1,29 +1,29 @@
 #!/usr/bin/env python
 
 import constants, uniseq
-import sys, os, re, cPickle, subprocess
+import sys, os, re, pickle, subprocess
 
 
-print os.uname()
-print sys.argv
+print(os.uname())
+print(sys.argv)
 
 
 from Bio.Blast import NCBIXML
 from Bio.SearchIO._legacy import NCBIStandalone
 from subprocess import call
 
-settings = cPickle.load(open(sys.argv[1] + "/settings.pick"))
+settings = pickle.load(open(sys.argv[1] + "/settings.pick"))
 
 tmp = os.getenv("TMPDIR")
 
 if tmp == None:
     tmp = settings["work_dir"]
 
-print "Temporary files go in ", tmp
+print("Temporary files go in ", tmp)
 
 uniseq_to_seq = uniseq.UniseqDB(settings["work_dir"] + "/uniseq_to_seq.pick", "r")
 
-seqs = cPickle.load(open(settings["work_dir"] + "/seqs.pick"))
+seqs = pickle.load(open(settings["work_dir"] + "/seqs.pick"))
 
 num1 = int(sys.argv[2])
 num2 = int(sys.argv[3])
@@ -38,10 +38,10 @@ pick_file = settings["work_dir"] + "/" + prefix
 db = tmp + "/" + os.path.basename(prefix) + ".db.fas"
 fas = tmp + "/" + os.path.basename(prefix)
 
-print num1, num2, step
-print fas
-print db
-print pick_file
+print(num1, num2, step)
+print(fas)
+print(db)
+print(pick_file)
 
 dbfile=open(db,"wct")
 fasfile=open(fas,"wct")
@@ -83,7 +83,7 @@ for blast_record in blast_records:
     for ali in blast_record.alignments:
 
         for hsp in ali.hsps:
-	    analysed_hsps += 1
+            analysed_hsps += 1
 
             query = str(blast_record.query)
             hit = str(ali.hit_def)
@@ -227,7 +227,7 @@ for blast_record in blast_records:
                         #print "No join on refs"
                         if not hit_is_ref_only and query_is_ref_only:
                             if hit_is_ref_only:
-                                print "ensuring reference hit is in both clusters"
+                                print("ensuring reference hit is in both clusters")
                                 if hit not in c1:
                                     c1.add(hit)
                                 if hit not in c2:
@@ -256,7 +256,7 @@ for blast_record in blast_records:
             elif hit in clusters:
                 #print "hit"
                 if hit_is_ref_only:
-                    print "hit is only ref, will not pull in query"
+                    print("hit is only ref, will not pull in query")
                 else:
                     clusters[hit].add(query)
                     clusters[query] = clusters[hit]
@@ -268,7 +268,7 @@ for blast_record in blast_records:
             elif query in clusters:
                 #print "query"
                 if query_is_ref_only:
-                    print "query is only ref, will not pull in hit"
+                    print("query is only ref, will not pull in hit")
                 else:
                     clusters[query].add(hit)
                     clusters[hit] = clusters[query]
@@ -289,12 +289,12 @@ for blast_record in blast_records:
 if len(non_hit) > 0:
     clusters[non_hit] = set([non_hit])
     
-print "Merging clusters..."
+print("Merging clusters...")
 
 
 sc = [ ]
 
-for c in clusters.values():
+for c in list(clusters.values()):
     tt = set()
     for t in sc:
         tt=t
@@ -309,7 +309,7 @@ for c in clusters.values():
 to_del = []
 for i,c in enumerate(sc):
     sys.stdout.flush()
-    if sum(map(lambda a: uniseq_to_seq[a]["count"], c)) < 1:
+    if sum([uniseq_to_seq[a]["count"] for a in c]) < 1:
         to_del.append(i)
 to_del.reverse()
 #print to_del
@@ -319,11 +319,11 @@ for d in to_del:
 
 #map(sum,map(lambda b: map(lambda c: uniseq_to_seq[c]["count"], b), map(lambda a: list(a),c)))
 
-cPickle.dump(sc,open(pick_file + ".pick","w"))
+pickle.dump(sc,open(pick_file + ".pick","w"))
 if int(settings["graph"]) == 1:
-    cPickle.dump(cluster_links,open(pick_file + ".links","w"))
+    pickle.dump(cluster_links,open(pick_file + ".links","w"))
 
-print "Analysed HSPs:", analysed_hsps, hit_hsps
+print("Analysed HSPs:", analysed_hsps, hit_hsps)
 os.remove(db)
 os.remove(db + ".nhr")
 os.remove(db + ".nsq")

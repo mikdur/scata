@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import constants
-import sys, time, sge, re, os, traceback, difflib, cPickle, subprocess
+import sys, time, sge, re, os, traceback, difflib, pickle, subprocess
 from Bio.Seq import Seq
 from Bio.Alphabet import generic_dna
 from array import array
@@ -22,7 +22,7 @@ def master_loop(argv, mpi_checker):
 
     log_entry("Connecting to database.")
 
-    print argv
+    print(argv)
 
     db = MySQLdb.connect( host=db_host, user=db_user, passwd=db_pass, db=db_db)
     db_c = db.cursor(MySQLdb.cursors.DictCursor)
@@ -60,10 +60,10 @@ def master_loop(argv, mpi_checker):
 
     tags5 = FilterSeq.get_tagset(row["Tagset5"], tagset_dir)
     if len(tags5) == 0:
-        print "No 5' tags"
+        print("No 5' tags")
     tags3 = FilterSeq.get_tagset(row["Tagset3"], tagset_dir)
     if len(tags3) == 0:
-        print "No 3' tags"
+        print("No 3' tags")
 
 
 
@@ -105,7 +105,7 @@ def master_loop(argv, mpi_checker):
                         [row["Name"], detagged_seq["tag_name"], r["id"]]]]
 
                 if len(detagged_seq["seq"]) == 0:
-                    print detagged_seq
+                    print(detagged_seq)
 
                 lengths.append(len(detagged_seq["seq"]))
                 if detagged_seq["rev"]:
@@ -145,7 +145,7 @@ def master_loop(argv, mpi_checker):
         n=0
         while True:
             reads = [ ]
-            print "grabbing more"
+            print("grabbing more")
             for rread in qual_seqs:
                 reads.append(rread)
                 if len(reads) >= chunk_size:
@@ -169,7 +169,7 @@ def master_loop(argv, mpi_checker):
             if mpi_checker and mpi_checker.ready_to_send():
                 mpi_checker.send(read_job)
             else:
-                print "Processing in master"
+                print("Processing in master")
                 handle_reads(process_reads(read_job))
             if len(reads) < chunk_size:
                 break
@@ -213,10 +213,10 @@ def master_loop(argv, mpi_checker):
 
 
         lengths.sort()
-        print seq_stats
-        cPickle.dump(seqs,
+        print(seq_stats)
+        pickle.dump(seqs,
                      open(dataset_dir + "/" + sys.argv[1] + ".seqs.pick", "wct"))
-        cPickle.dump(seq_stats,
+        pickle.dump(seq_stats,
                      open(dataset_dir + "/" + sys.argv[1] + ".stat.pick", "wct"))
 
         to_print=[ ["pyro_reads", "Total number of reads"],
@@ -245,15 +245,15 @@ def master_loop(argv, mpi_checker):
             msg += "%s:%s%8s\n" % (tp[1], (" " * (54 - len(tp[1]))), str(seq_stats[tp[0]]) if tp[0] in seq_stats else "0")
 
     
-        print msg
+        print(msg)
     
         if seq_stats["good_reads"] == 0:
             errors = "No good reads!\n\n" + msg 
 
 
     except:
-	if mpi_checker:
-		mpi_checker.end_workers()
+        if mpi_checker:
+            mpi_checker.end_workers()
         exceptionType, exceptionValue, exceptionTraceback = sys.exc_info()
         exception_text = "".join(traceback.format_exception(exceptionType, exceptionValue,
                                     exceptionTraceback))
@@ -286,7 +286,7 @@ def master_loop(argv, mpi_checker):
         db_c.execute("DELETE FROM Datasets WHERE idDatasets = %s", (datasetid,))
         db.commit()
         try:
-            print "not removing files"
+            print("not removing files")
             #os.remove(dataset_dir + "/" + sys.argv[1] + ".dat.1")
             #os.remove(dataset_dir + "/" + sys.argv[1] + ".dat.2")
         except:
@@ -305,7 +305,7 @@ def master_loop(argv, mpi_checker):
         #db_c.execute("UPDATE Datasets SET ready=0,locked=0,Description=%s WHERE idDatasets = %s", (msg,datasetid,))
         db.commit()
         try:
-            print "removeing files"
+            print("removeing files")
             os.remove(dataset_dir + "/" + sys.argv[1] + ".fas")
             os.remove(dataset_dir + "/" + sys.argv[1] + ".qual")
         except:
@@ -417,18 +417,18 @@ class Mpi_Checker:
 
     # Checks if any worker is done and returns True if at least one is so.
     def data_available(self):
-        for k in self.reqs.keys():
+        for k in list(self.reqs.keys()):
             if self.reqs[k]["req"]:
                 if self.reqs[k]["req"].Test(self.reqs[k]["status"]):
                     self.reqs[k]["ready"] = True
-                    print "Ready", k
+                    print("Ready", k)
                     return True
         return False
 
     def get_data(self):
-        for k in self.reqs.keys():
+        for k in list(self.reqs.keys()):
             if self.reqs[k]["ready"]:
-                print "r", k
+                print("r", k)
                 pickled = self.reqs[k]["buf"].tostring().split("\0")[0]
                 while True and pickled[0]=="c":
                     buf=array('c', '\0' * (self.buf_size + 100))
@@ -441,14 +441,14 @@ class Mpi_Checker:
                 self.reqs[k]["available"]=True
                 self.reqs[k]["ready"]=False
                     
-                return cPickle.loads(pickled[1:])
+                return pickle.loads(pickled[1:])
         return None
 
     def send(self, job):
-        for k in self.reqs.keys():
+        for k in list(self.reqs.keys()):
             if self.reqs[k]["available"]:
-                pickled = cPickle.dumps(job)
-                print "Send", k, "pickled len", len(pickled)
+                pickled = pickle.dumps(job)
+                print("Send", k, "pickled len", len(pickled))
                 splitted = ["c" + pickled[x:x + (self.buf_size-1)] for x in range(0, len(pickled), self.buf_size - 1)]
                 splitted[-1] = 'l' + splitted[-1][1:]
                 for s in splitted:
@@ -460,20 +460,20 @@ class Mpi_Checker:
                 return
                 
     def ready_to_send(self):
-        for k in self.reqs.keys():
+        for k in list(self.reqs.keys()):
             if self.reqs[k]["available"]:
                 return True
         return False
 
     def no_more(self):
-        for k in self.reqs.keys():
+        for k in list(self.reqs.keys()):
             if not self.reqs[k]["available"]:
                 return False
         return True
 
     def end_workers(self):
-        for k in self.reqs.keys():
-            self.mpi_comm.Send(array('c','l' + cPickle.dumps(None)), dest=k, tag=42)
+        for k in list(self.reqs.keys()):
+            self.mpi_comm.Send(array('c','l' + pickle.dumps(None)), dest=k, tag=42)
 
             
 class Mpi_Worker:
@@ -484,7 +484,7 @@ class Mpi_Worker:
 
     # Worker, will exit once it gets the close message
     def worker(self):
-        print "Worker in", self.rank, "now running"
+        print("Worker in", self.rank, "now running")
         while True:
             buf = array('c', '\0' * self.buf_size)
             self.mpi_comm.Recv(buf, source=0, tag=42)
@@ -498,17 +498,17 @@ class Mpi_Worker:
                         pickled += tmp[1:]
                         break
                     pickled += tmp[1:]
-            print "Recv", self.rank, "pickled len", len(pickled)
-            job = cPickle.loads(pickled[1:])
+            print("Recv", self.rank, "pickled len", len(pickled))
+            job = pickle.loads(pickled[1:])
             if job == None:
                 return
             result = process_reads(job)
-            pickled = cPickle.dumps(result)
+            pickled = pickle.dumps(result)
             splitted = ["c" + pickled[x:x + (self.buf_size - 1)] for x in range(0, len(pickled), self.buf_size - 1)]
             splitted[-1] = 'l' + splitted[-1][1:]
             for s in splitted:
                 self.mpi_comm.Send(array('c',s), dest=0, tag=42)
-        print "Worker in", self.rank, "now done"
+        print("Worker in", self.rank, "now done")
 
 
 mpi_checker = None
@@ -517,19 +517,19 @@ try:
     mpi_comm = MPI.COMM_WORLD
     mpi_rank = mpi_comm.Get_rank()
     mpi_size = mpi_comm.Get_size()
-    print "MPI Available"
+    print("MPI Available")
     if mpi_size == 1:
-        print "Only one MPI process, will not use MPI"
+        print("Only one MPI process, will not use MPI")
         master_loop(sys.argv, None)
     else:
         if mpi_rank > 0:
-            print "Starting MPI subprocess listener #", mpi_rank
+            print("Starting MPI subprocess listener #", mpi_rank)
             Mpi_Worker(mpi_comm).worker()
-            print "MPI processor done #", mpi_rank
+            print("MPI processor done #", mpi_rank)
         else:
-            print "MPI main process with ", mpi_size, "subprocesses"
+            print("MPI main process with ", mpi_size, "subprocesses")
             master_loop(sys.argv, Mpi_Checker(mpi_comm))
 except ImportError:
-    print "No MPI"
+    print("No MPI")
     master_loop(sys.argv, None)
 
